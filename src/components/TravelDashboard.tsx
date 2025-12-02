@@ -15,8 +15,8 @@ interface TravelItem {
     startDate: string;
     endDate: string;
     participants: number;
-    destination?: string;
-    places?: any[];
+    destination: string;
+    places: any[];
 }
 
 interface Notification {
@@ -58,9 +58,24 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
     const [selectedTravel, setSelectedTravel] = useState<TravelItem | null>(null);
     const [isDetailViewOpen, setIsDetailViewOpen] = useState(false);
 
-    // localStorage에서 travels 상태 초기화
+    // 현재 로그인한 사용자 ID 가져오기
+    const getUserId = () => {
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+            try {
+                const user = JSON.parse(userStr);
+                return user.user_id || 'guest';
+            } catch (e) {
+                return 'guest';
+            }
+        }
+        return 'guest';
+    };
+
+    // localStorage에서 사용자별 travels 상태 초기화
     const [travels, setTravels] = useState<TravelItem[]>(() => {
-        const saved = localStorage.getItem('travels');
+        const userId = getUserId();
+        const saved = localStorage.getItem(`travels_${userId}`);
         return saved ? JSON.parse(saved) : [];
     });
 
@@ -78,9 +93,10 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
             return;
         }
 
+        const userId = getUserId();
         const updatedTravels = [...travels, newTravel];
         setTravels(updatedTravels);
-        localStorage.setItem('travels', JSON.stringify(updatedTravels));
+        localStorage.setItem(`travels_${userId}`, JSON.stringify(updatedTravels));
 
         // 저장 후 맵 닫기
         setIsMapOpen(false);
@@ -88,9 +104,10 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
 
     // 일정 삭제 핸들러
     const handleScheduleDelete = (travelId: number) => {
+        const userId = getUserId();
         const updatedTravels = travels.filter(travel => travel.id !== travelId);
         setTravels(updatedTravels);
-        localStorage.setItem('travels', JSON.stringify(updatedTravels));
+        localStorage.setItem(`travels_${userId}`, JSON.stringify(updatedTravels));
     };
 
     // 로그아웃 핸들러
