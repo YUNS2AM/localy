@@ -38,7 +38,7 @@ export function LoginForm({ onSwitchToSignup, onLoginSuccess, onBack }: LoginFor
 
             // 사용자 정보를 localStorage에 저장
             localStorage.setItem('user', JSON.stringify({
-                user_id: data.user_id,
+                user_id: username,
                 user_nickname: data.user_nickname
             }));
 
