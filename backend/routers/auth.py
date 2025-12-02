@@ -11,6 +11,14 @@ router = APIRouter(
     responses={404: {"description": "Not found"}},
 )
 
+# 0. 아이디 중복 확인 API
+@router.get("/check-username/{user_id}")
+async def check_username(user_id: str, db: Session = Depends(get_db)):
+    db_user = db.query(User).filter(User.user_id == user_id).first()
+    if db_user:
+        return {"available": False, "message": "이미 사용 중인 아이디입니다."}
+    return {"available": True, "message": "사용 가능한 아이디입니다."}
+
 # 1. 회원가입 API
 @router.post("/signup", response_model=UserResponse)
 async def signup(user: UserCreate, db: Session = Depends(get_db)):

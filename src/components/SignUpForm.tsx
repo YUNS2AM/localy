@@ -47,11 +47,28 @@ export function SignupForm({ onSwitchToLogin, onSignupSuccess, onBack }: SignupF
         };
     }, []);
 
-    const handleCheckUsername = () => {
-        console.log('Checking username:', username);
-        setIsUsernameChecked(true);
-        setIsUsernameAvailable(true);
-        alert('사용 가능한 아이디입니다.');
+    const handleCheckUsername = async () => {
+        if (!username) {
+            alert('아이디를 입력해주세요.');
+            return;
+        }
+
+        try {
+            const response = await fetch(`http://localhost:8000/auth/check-username/${encodeURIComponent(username)}`);
+            const data = await response.json();
+
+            setIsUsernameChecked(true);
+            setIsUsernameAvailable(data.available);
+
+            if (data.available) {
+                alert('사용 가능한 아이디입니다.');
+            } else {
+                alert('이미 사용 중인 아이디입니다.');
+            }
+        } catch (error) {
+            console.error('Username check error:', error);
+            alert('서버 연결에 실패했습니다. 백엔드 서버가 실행 중인지 확인해주세요.');
+        }
     };
 
     const handleSendVerificationCode = () => {
@@ -128,18 +145,16 @@ export function SignupForm({ onSwitchToLogin, onSignupSuccess, onBack }: SignupF
 
     return (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }} style={{ width: '100%', maxWidth: '500px', maxHeight: '85vh', overflowY: 'auto', padding: '40px', background: 'rgba(255, 255, 255, 0.95)', backdropFilter: 'blur(20px)', borderRadius: '20px', boxShadow: '0 8px 32px rgba(45, 139, 95, 0.2)', border: '1px solid rgba(45, 139, 95, 0.1)' }}>
-            <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-                <h2 style={{ fontSize: '28px', fontWeight: 'bold', color: '#2D8B5F', marginBottom: '8px' }}>회원가입</h2>
-                <p style={{ color: '#666', fontSize: '14px' }}>새로운 계정을 만드세요</p>
-            </div>
+            <h2 style={{ color: '#2D8B5F', fontSize: '28px', fontWeight: '700', marginBottom: '8px', textAlign: 'center' }}>회원가입</h2>
+            <p style={{ color: '#666', fontSize: '14px', marginBottom: '32px', textAlign: 'center' }}>AIX Travel과 함께 특별한 여행을 시작하세요</p>
 
             <form onSubmit={handleSubmit}>
                 <FormField label="아이디" icon={<User size={20} />} verified={isUsernameChecked && isUsernameAvailable}>
-                    < div style={{ display: 'flex', gap: '8px' }}>
-                        <input type="text" value={username} onChange={(e) => { setUsername(e.target.value); setIsUsernameChecked(false); setIsUsernameAvailable(false); }} placeholder="아이디" required disabled={isUsernameChecked && isUsernameAvailable} style={{ flex: 1, padding: '12px 12px 12px 44px', borderRadius: '12px', border: '2px solid rgba(45, 139, 95, 0.2)', fontSize: '14px', boxSizing: 'border-box', backgroundColor: (isUsernameChecked && isUsernameAvailable) ? '#f5f5f5' : 'white' }} />
-                        <motion.button type="button" onClick={handleCheckUsername} disabled={(isUsernameChecked && isUsernameAvailable) || !username} whileHover={{ scale: (isUsernameChecked && isUsernameAvailable) ? 1 : 1.05 }} whileTap={{ scale: (isUsernameChecked && isUsernameAvailable) ? 1 : 0.95 }} style={{ minWidth: '85px', padding: '12px 16px', height: '46px', borderRadius: '12px', border: 'none', background: (isUsernameChecked && isUsernameAvailable) ? '#ccc' : 'linear-gradient(135deg, #2D8B5F 0%, #3BA474 100%)', color: 'white', fontSize: '13px', fontWeight: '600', cursor: (isUsernameChecked && isUsernameAvailable) ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>중복확인</motion.button>
-                    </div >
-                </FormField >
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                        <input type="text" value={username} onChange={(e) => { setUsername(e.target.value); setIsUsernameChecked(false); }} placeholder="아이디" required style={{ flex: 1, padding: '12px 12px 12px 44px', borderRadius: '12px', border: '2px solid rgba(45, 139, 95, 0.2)', fontSize: '14px', boxSizing: 'border-box' }} />
+                        <motion.button type="button" onClick={handleCheckUsername} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} style={{ minWidth: '85px', padding: '12px 16px', height: '46px', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg, #2D8B5F 0%, #3BA474 100%)', color: 'white', fontSize: '13px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>중복확인</motion.button>
+                    </div>
+                </FormField>
 
                 <FormField label="비밀번호" icon={<Lock size={20} />}>
                     <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="비밀번호" required style={{ width: '100%', padding: '12px 12px 12px 44px', borderRadius: '12px', border: '2px solid rgba(45, 139, 95, 0.2)', fontSize: '14px', boxSizing: 'border-box' }} />
@@ -211,8 +226,8 @@ export function SignupForm({ onSwitchToLogin, onSignupSuccess, onBack }: SignupF
                     <span style={{ color: '#666', fontSize: '14px' }}>이미 계정이 있으신가요? </span>
                     <button type="button" onClick={onSwitchToLogin} style={{ background: 'none', border: 'none', color: '#2D8B5F', fontSize: '14px', fontWeight: '600', cursor: 'pointer', textDecoration: 'underline' }}>로그인</button>
                 </div>
-            </form >
-        </motion.div >
+            </form>
+        </motion.div>
     );
 }
 
