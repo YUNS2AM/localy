@@ -17,30 +17,20 @@ export function LoginForm({ onSwitchToSignup, onLoginSuccess, onBack }: LoginFor
 
         try {
             const response = await fetch('http://localhost:8000/auth/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    user_id: username,
-                    user_pw: password
-                })
+                // ... (기존 코드와 동일)
             });
 
             if (!response.ok) {
-                const error = await response.json();
-                alert(error.detail || '로그인에 실패했습니다.');
+                // ... (에러 처리)
                 return;
             }
 
-            const data = await response.json();
+            const data = await response.json(); // 서버에서 준 모든 정보(data)를 받음
             console.log('Login success:', data);
 
-            // 사용자 정보를 localStorage에 저장
-            localStorage.setItem('user', JSON.stringify({
-                user_id: username,
-                user_nickname: data.user_nickname
-            }));
+            // [수정됨] 서버가 준 모든 정보를 통째로 저장!
+            // 이제 user_addr1, user_birth 등 모든 정보가 들어갑니다.
+            localStorage.setItem('user', JSON.stringify(data));
 
             onLoginSuccess();
         } catch (error) {

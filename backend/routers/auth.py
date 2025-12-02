@@ -67,9 +67,17 @@ async def login(user_req: UserLogin, db: Session = Depends(get_db)):
             detail="아이디 또는 비밀번호가 잘못되었습니다.",
         )
     
-    # 성공 시 간단한 메시지 또는 토큰 반환 (나중에 JWT 적용 예정)
+    # [수정됨] 로그인 성공 시 모든 정보를 다 반환합니다!
     return {
         "message": "로그인 성공!",
+        "user_id": user.user_id,
+        "user_name": user.user_name,
         "user_nickname": user.user_nickname,
-        "user_id": user.user_id
+        "user_email": user.user_email,
+        "user_phone": user.user_phone if hasattr(user, "user_phone") else "", # 폰 번호가 있다면
+        "user_post": user.user_post,
+        "user_addr1": user.user_addr1,
+        "user_addr2": user.user_addr2,
+        "user_birth": str(user.user_birth) if user.user_birth else "", # 날짜는 문자열로 변환
+        "user_gender": user.user_gender
     }

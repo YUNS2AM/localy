@@ -15,8 +15,8 @@ interface TravelItem {
     startDate: string;
     endDate: string;
     participants: number;
-    destination?: string;
-    places?: any[];
+    destination: string;
+    places: any[];
 }
 
 interface Notification {
