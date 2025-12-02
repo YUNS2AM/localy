@@ -1,21 +1,13 @@
 import { motion } from 'motion/react';
-import { ArrowLeft, User, Mail, MapPin, Calendar } from 'lucide-react';
+import { ArrowLeft, User, Mail, MapPin, Calendar, Phone } from 'lucide-react'; // 아이콘 추가
 import { useState, useEffect } from 'react';
-import { validateName, validateNickname } from '../utils/validation';
-
-const myUrl = window.location.protocol + "//" + window.location.hostname + ":8000";
-
-declare global {
-    interface Window {
-        daum: any;
-    }
-}
 
 interface PersonalInfoEditScreenProps {
     onClose: () => void;
 }
 
 export function PersonalInfoEditScreen({ onClose }: PersonalInfoEditScreenProps) {
+    // 1. 회원가입 때 썼던 필드들과 동일하게 상태 관리
     const [userInfo, setUserInfo] = useState({
         user_id: '',
         user_name: '',
@@ -29,15 +21,7 @@ export function PersonalInfoEditScreen({ onClose }: PersonalInfoEditScreenProps)
         user_gender: ''
     });
 
-    // Validation errors
-    const [nameError, setNameError] = useState('');
-    const [nicknameError, setNicknameError] = useState('');
-
-    // Nickname duplicate check
-    const [originalNickname, setOriginalNickname] = useState('');
-    const [isNicknameChecked, setIsNicknameChecked] = useState(true);
-    const [isNicknameAvailable, setIsNicknameAvailable] = useState(true);
-
+    // 2. 화면이 열리면 localStorage에서 내 정보 가져오기
     useEffect(() => {
         const userStr = localStorage.getItem('user');
         if (userStr) {
@@ -45,87 +29,31 @@ export function PersonalInfoEditScreen({ onClose }: PersonalInfoEditScreenProps)
                 const user = JSON.parse(userStr);
                 setUserInfo(prev => ({
                     ...prev,
-                    ...user
+                    ...user // 저장된 정보로 덮어쓰기
                 }));
-                setOriginalNickname(user.user_nickname || '');
             } catch (e) {
                 console.error('사용자 정보 로딩 실패:', e);
             }
         }
-
-        // Load Daum Postcode script
-        const script = document.createElement('script');
-        script.src = '//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js';
-        script.async = true;
-        document.body.appendChild(script);
-
-        return () => {
-            if (document.body.contains(script)) {
-                document.body.removeChild(script);
-            }
-        };
     }, []);
 
-    const handleCheckNickname = async () => {
-        const validation = validateNickname(userInfo.user_nickname);
-        if (!validation.isValid) {
-            setNicknameError(validation.errorMessage || '');
-            alert(validation.errorMessage);
-            return;
-        }
-
-        try {
-            const response = await fetch(`${myUrl}/auth/check-nickname/${encodeURIComponent(userInfo.user_nickname)}`);
-            const data = await response.json();
-
-            setIsNicknameChecked(true);
-            setIsNicknameAvailable(data.available);
-
-            if (data.available) {
-                setNicknameError('');
-                alert('사용 가능한 닉네임입니다.');
-            } else {
-                setNicknameError('이미 사용 중인 닉네임입니다.');
-                alert('이미 사용 중인 닉네임입니다.');
-            }
-        } catch (error) {
-            console.error('Nickname check error:', error);
-            alert('서버 연결에 실패했습니다.');
-        }
-    };
-
+    // 3. 수정된 정보 저장하기
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-
-        // Validate name and nickname
-        const nameValidation = validateName(userInfo.user_name);
-        const nicknameValidation = validateNickname(userInfo.user_nickname);
-
-        if (!nameValidation.isValid) {
-            alert(nameValidation.errorMessage);
-            return;
-        }
-
-        if (!nicknameValidation.isValid) {
-            alert(nicknameValidation.errorMessage);
-            return;
-        }
-
-        // Check if nickname changed and if duplicate check was done
-        if (userInfo.user_nickname !== originalNickname) {
-            if (!isNicknameChecked || !isNicknameAvailable) {
-                alert('닉네임 중복확인을 완료해주세요.');
-                return;
-            }
-        }
-
         const userStr = localStorage.getItem('user');
 
         if (userStr) {
             try {
                 const currentUser = JSON.parse(userStr);
+                // 기존 정보에 수정된 정보 합치기
                 const updatedUser = { ...currentUser, ...userInfo };
+
+                // localStorage 업데이트
                 localStorage.setItem('user', JSON.stringify(updatedUser));
+
+                // TODO: 여기서 백엔드 서버로도 전송해야 완벽합니다.
+                // fetch('http://localhost:8000/auth/update', { ... })
+
                 alert('개인정보가 수정되었습니다.');
                 onClose();
             } catch (e) {
@@ -135,6 +63,7 @@ export function PersonalInfoEditScreen({ onClose }: PersonalInfoEditScreenProps)
         }
     };
 
+    // 우편번호 찾기 (Daum Postcode) - SignUpForm과 동일하게 사용
     const handleSearchAddress = () => {
         if (window.daum && window.daum.Postcode) {
             new window.daum.Postcode({
@@ -151,8 +80,6 @@ export function PersonalInfoEditScreen({ onClose }: PersonalInfoEditScreenProps)
         }
     };
 
-    const nicknameChanged = userInfo.user_nickname !== originalNickname;
-
     return (
         <motion.div
             initial={{ opacity: 0, x: 20 }}
@@ -165,12 +92,14 @@ export function PersonalInfoEditScreen({ onClose }: PersonalInfoEditScreenProps)
                 left: 0,
                 right: 0,
                 bottom: 0,
+                height: '100vh',
                 backgroundColor: 'white',
                 zIndex: 1200,
                 display: 'flex',
                 flexDirection: 'column'
             }}
         >
+            {/* 헤더 */}
             <div style={{
                 padding: '20px 30px',
                 borderBottom: '1px solid #eee',
@@ -208,7 +137,8 @@ export function PersonalInfoEditScreen({ onClose }: PersonalInfoEditScreenProps)
                 </h2>
             </div>
 
-            <div style={{ flex: 1, overflowY: 'auto', padding: '30px' }}>
+            {/* 입력 폼 영역 */}
+            <div style={{ flex: 1, overflowY: 'scroll', padding: '30px', paddingBottom: '100px' }}>
                 <form onSubmit={handleSubmit}>
 
                     {/* 아이디 (수정 불가) */}
@@ -218,8 +148,7 @@ export function PersonalInfoEditScreen({ onClose }: PersonalInfoEditScreenProps)
                             type="text"
                             value={userInfo.user_id}
                             disabled
-                            readOnly
-                            style={{ ...inputStyle, backgroundColor: '#f5f5f5', color: '#999', cursor: 'not-allowed' }}
+                            style={{ ...inputStyle, backgroundColor: '#f5f5f5', color: '#999' }}
                         />
                     </div>
 
@@ -231,71 +160,27 @@ export function PersonalInfoEditScreen({ onClose }: PersonalInfoEditScreenProps)
                             <input
                                 type="text"
                                 value={userInfo.user_name}
-                                onChange={(e) => {
-                                    const val = e.target.value;
-                                    setUserInfo({ ...userInfo, user_name: val });
-                                    const validation = validateName(val);
-                                    setNameError(validation.isValid ? '' : validation.errorMessage || '');
-                                }}
-                                placeholder="이름 (한글만)"
-                                style={{ ...inputStyle, border: nameError ? '2px solid #e74c3c' : '1px solid #e0e0e0' }}
+                                onChange={(e) => setUserInfo({ ...userInfo, user_name: e.target.value })}
+                                style={inputStyle}
                             />
                         </div>
-                        {nameError && <p style={{ color: '#e74c3c', fontSize: '12px', marginTop: '4px' }}>{nameError}</p>}
                     </div>
 
                     {/* 닉네임 */}
                     <div style={{ marginBottom: '24px' }}>
                         <label style={labelStyle}>닉네임</label>
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                            <div style={{ position: 'relative', flex: 1 }}>
-                                <User size={18} style={iconStyle} />
-                                <input
-                                    type="text"
-                                    value={userInfo.user_nickname}
-                                    onChange={(e) => {
-                                        const val = e.target.value;
-                                        setUserInfo({ ...userInfo, user_nickname: val });
-                                        if (val !== originalNickname) {
-                                            setIsNicknameChecked(false);
-                                        } else {
-                                            setIsNicknameChecked(true);
-                                            setIsNicknameAvailable(true);
-                                        }
-                                        const validation = validateNickname(val);
-                                        setNicknameError(validation.isValid ? '' : validation.errorMessage || '');
-                                    }}
-                                    placeholder="닉네임"
-                                    style={{ ...inputStyle, border: nicknameError ? '2px solid #e74c3c' : '1px solid #e0e0e0' }}
-                                />
-                            </div>
-                            <motion.button
-                                type="button"
-                                onClick={handleCheckNickname}
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                disabled={!nicknameChanged}
-                                style={{
-                                    padding: '0 20px',
-                                    height: '52px',
-                                    borderRadius: '12px',
-                                    border: 'none',
-                                    background: nicknameChanged ? 'linear-gradient(135deg, #2D8B5F 0%, #3BA474 100%)' : '#ccc',
-                                    color: 'white',
-                                    fontSize: '13px',
-                                    fontWeight: '600',
-                                    cursor: nicknameChanged ? 'pointer' : 'not-allowed',
-                                    whiteSpace: 'nowrap'
-                                }}
-                            >
-                                중복확인
-                            </motion.button>
+                        <div style={{ position: 'relative' }}>
+                            <User size={18} style={iconStyle} />
+                            <input
+                                type="text"
+                                value={userInfo.user_nickname}
+                                onChange={(e) => setUserInfo({ ...userInfo, user_nickname: e.target.value })}
+                                style={inputStyle}
+                            />
                         </div>
-                        {nicknameError && <p style={{ color: '#e74c3c', fontSize: '12px', marginTop: '4px' }}>{nicknameError}</p>}
-                        {nicknameChanged && isNicknameChecked && isNicknameAvailable && <p style={{ color: '#27ae60', fontSize: '12px', marginTop: '4px' }}>✓ 사용 가능한 닉네임입니다.</p>}
                     </div>
 
-                    {/* 이메일 (수정 불가) */}
+                    {/* 이메일 */}
                     <div style={{ marginBottom: '24px' }}>
                         <label style={labelStyle}>이메일</label>
                         <div style={{ position: 'relative' }}>
@@ -303,9 +188,8 @@ export function PersonalInfoEditScreen({ onClose }: PersonalInfoEditScreenProps)
                             <input
                                 type="email"
                                 value={userInfo.user_email}
-                                disabled
-                                readOnly
-                                style={{ ...inputStyle, backgroundColor: '#f5f5f5', color: '#999', cursor: 'not-allowed' }}
+                                onChange={(e) => setUserInfo({ ...userInfo, user_email: e.target.value })}
+                                style={inputStyle}
                             />
                         </div>
                     </div>
@@ -377,18 +261,17 @@ export function PersonalInfoEditScreen({ onClose }: PersonalInfoEditScreenProps)
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         type="submit"
-                        disabled={!!nameError || !!nicknameError || (nicknameChanged && (!isNicknameChecked || !isNicknameAvailable))}
                         style={{
                             width: '100%',
                             padding: '16px',
                             borderRadius: '12px',
                             border: 'none',
-                            background: (nameError || nicknameError || (nicknameChanged && (!isNicknameChecked || !isNicknameAvailable))) ? '#ccc' : 'linear-gradient(135deg, #2D8B5F 0%, #3BA474 100%)',
+                            background: 'linear-gradient(135deg, #2D8B5F 0%, #3BA474 100%)',
                             color: 'white',
                             fontSize: '16px',
                             fontWeight: 'bold',
-                            cursor: (nameError || nicknameError || (nicknameChanged && (!isNicknameChecked || !isNicknameAvailable))) ? 'not-allowed' : 'pointer',
-                            boxShadow: (nameError || nicknameError || (nicknameChanged && (!isNicknameChecked || !isNicknameAvailable))) ? 'none' : '0 4px 12px rgba(45, 139, 95, 0.3)'
+                            cursor: 'pointer',
+                            boxShadow: '0 4px 12px rgba(45, 139, 95, 0.3)'
                         }}
                     >
                         수정 완료
@@ -399,6 +282,7 @@ export function PersonalInfoEditScreen({ onClose }: PersonalInfoEditScreenProps)
     );
 }
 
+// 스타일 객체들
 const labelStyle: React.CSSProperties = {
     display: 'block',
     fontSize: '14px',
@@ -409,7 +293,7 @@ const labelStyle: React.CSSProperties = {
 
 const inputStyle: React.CSSProperties = {
     width: '100%',
-    padding: '14px 14px 14px 44px',
+    padding: '14px 14px 14px 44px', // 아이콘 공간 확보
     borderRadius: '12px',
     border: '1px solid #e0e0e0',
     fontSize: '15px',

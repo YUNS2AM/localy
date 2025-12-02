@@ -223,7 +223,10 @@ async def login(user_req: UserLogin, db: Session = Depends(get_db)):
         "user_addr1": user.user_addr1,
         "user_addr2": user.user_addr2,
         "user_birth": str(user.user_birth) if user.user_birth else "",
-        "user_gender": user.user_gender
+        "user_gender": user.user_gender,
+        # [핵심 추가] 챗봇에서 저장한 페르소나 데이터도 함께 반환
+        "non_preferred_food": user.non_preferred_food if hasattr(user, "non_preferred_food") else "",
+        "non_preferred_region": user.non_preferred_region if hasattr(user, "non_preferred_region") else ""
     }
 
 
@@ -281,3 +284,55 @@ async def withdraw_user(user_id: str, db: Session = Depends(get_db)):
     db.commit()
     
     return {"message": "회원 탈퇴가 완료되었습니다. 그동안 이용해 주셔서 감사합니다."}
+
+# -----------------------------------------------------------
+# [추가] 개인정보 및 페르소나 수정 기능 (UserUpdateRequest 포함)
+# -----------------------------------------------------------
+
+# 1. 수정 요청 데이터 틀 만들기 (없다고 하셔서 새로 만듦!)
+class UserUpdateRequest(BaseModel):
+    user_id: str
+    user_nickname: str | None = None
+    user_phone: str | None = None
+    user_post: str | None = None
+    user_addr1: str | None = None
+    user_addr2: str | None = None
+    # 👇 채팅봇이 보내줄 데이터 필드
+    non_preferred_food: str | None = None   
+    non_preferred_region: str | None = None
+
+# 2. 실제 수정 기능 (API)
+@router.put("/update-profile")
+async def update_profile(request: UserUpdateRequest, db: Session = Depends(get_db)):
+    """
+    사용자 정보(개인정보 + 페르소나)를 수정합니다.
+    """
+    # 1. 사용자 찾기
+    user = db.query(User).filter(User.user_id == request.user_id).first()
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
+    
+    # 2. 들어온 값만 쏙쏙 골라서 업데이트 (None인 건 건드리지 않음)
+    if request.user_nickname is not None:
+        user.user_nickname = request.user_nickname
+    if request.user_phone is not None:
+        user.user_phone = request.user_phone
+    if request.user_post is not None:
+        user.user_post = request.user_post
+    if request.user_addr1 is not None:
+        user.user_addr1 = request.user_addr1
+    if request.user_addr2 is not None:
+        user.user_addr2 = request.user_addr2
+        
+    # 👇 채팅 데이터 저장 부분
+    if request.non_preferred_food is not None:
+        user.non_preferred_food = request.non_preferred_food
+    if request.non_preferred_region is not None:
+        user.non_preferred_region = request.non_preferred_region
+        
+    # 3. DB에 확정 짓기
+    db.commit()
+    db.refresh(user)
+    
+    return {"message": "정보가 성공적으로 수정되었습니다."}

@@ -18,6 +18,9 @@ interface Message {
 type QuestionStep = 'food' | 'location' | 'complete';
 
 export function ChatScreen({ userName, onComplete }: ChatScreenProps) {
+    // 동적 URL 설정 (다른 컴포넌트와 일관성 유지)
+    const myUrl = window.location.protocol + "//" + window.location.hostname + ":8000";
+
     const [currentStep, setCurrentStep] = useState<QuestionStep>('food');
     const [messages, setMessages] = useState<Message[]>([
         {
@@ -44,9 +47,52 @@ export function ChatScreen({ userName, onComplete }: ChatScreenProps) {
         scrollToBottom();
     }, [messages]);
 
+    // [수정] 답변을 로컬스토리지와 서버(DB)에 동시 저장
+    const saveAnswerToPersona = async (step: QuestionStep, answer: string) => {
+        try {
+            // 1. 로컬스토리지에서 유저 정보 가져오기
+            const userStr = localStorage.getItem('user');
+            if (!userStr) return;
+
+            let user = JSON.parse(userStr);
+            const userId = user.user_id; // 아이디 확보
+
+            // 2. 서버로 보낼 데이터 준비 (내 아이디 + 답변)
+            let updateData: any = { user_id: userId };
+
+            if (step === 'food') {
+                user.non_preferred_food = answer;       // 화면용 업데이트
+                updateData.non_preferred_food = answer; // 서버용 데이터 담기
+            } else if (step === 'location') {
+                user.non_preferred_region = answer;       // 화면용 업데이트
+                updateData.non_preferred_region = answer; // 서버용 데이터 담기
+            }
+
+            // 3. 로컬스토리지 즉시 저장 (화면 반영)
+            localStorage.setItem('user', JSON.stringify(user));
+            console.log(`[Local] Saved ${step}:`, answer);
+
+            // 4. [핵심] 서버로 전송해서 DB에 영구 저장!
+            try {
+                await fetch(`${myUrl}/auth/update-profile`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updateData)
+                });
+                console.log(`[Server] Saved ${step} to DB`);
+            } catch (serverError) {
+                console.error('서버 저장 실패 (백엔드가 켜져있는지 확인하세요):', serverError);
+            }
+
+        } catch (e) {
+            console.error('Error saving persona data:', e);
+        }
+    };
+
     const handleSend = () => {
         if (!inputText.trim()) return;
 
+        // 1. 유저 메시지 화면에 표시
         const userMessage: Message = {
             id: messages.length + 1,
             text: inputText,
@@ -55,6 +101,10 @@ export function ChatScreen({ userName, onComplete }: ChatScreenProps) {
         };
 
         setMessages([...messages, userMessage]);
+
+        // [중요] 2. 입력한 내용 저장 (현재 단계에 맞춰서!)
+        saveAnswerToPersona(currentStep, inputText);
+
         setInputText('');
 
         // Handle cat response based on current step
