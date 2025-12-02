@@ -981,10 +981,8 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
             <AnimatePresence>
                 {isPasswordEditOpen && (
                     <PasswordEditScreen
-                        onClose={() => {
-                            setIsPasswordEditOpen(false);
-                            setIsAccountManagementOpen(true);
-                        }}
+                        onClose={() => setIsPasswordEditOpen(false)}
+                        userId={getUserId()}
                     />
                 )}
             </AnimatePresence>

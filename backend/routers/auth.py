@@ -191,3 +191,37 @@ async def login(user_req: UserLogin, db: Session = Depends(get_db)):
         "user_birth": str(user.user_birth) if user.user_birth else "", # 날짜는 문자열로 변환
         "user_gender": user.user_gender
     }
+
+
+# -----------------------------------------------------------
+# [추가] 비밀번호 변경 기능
+# -----------------------------------------------------------
+
+# 1. 비밀번호 변경 요청에 사용할 데이터 틀
+class PasswordChangeRequest(BaseModel):
+    user_id: str          # 누구의 비밀번호를 바꿀지 알아야 함
+    current_password: str # 현재 비밀번호 (확인용)
+    new_password: str     # 바꿀 비밀번호
+
+@router.put("/change-password")
+async def change_password(request: PasswordChangeRequest, db: Session = Depends(get_db)):
+    """
+    로그인한 사용자의 비밀번호를 변경합니다.
+    """
+    # 1. 사용자 찾기 (DB에서 user_id로 조회)
+    user = db.query(User).filter(User.user_id == request.user_id).first()
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
+
+    # 2. 현재 비밀번호가 맞는지 확인
+    if not verify_password(request.current_password, user.user_pw):
+        raise HTTPException(status_code=400, detail="현재 비밀번호가 일치하지 않습니다.")
+
+    # 3. 새 비밀번호 암호화해서 저장
+    user.user_pw = get_password_hash(request.new_password)
+    
+    db.add(user)
+    db.commit() # 저장 확정
+    
+    return {"message": "비밀번호가 성공적으로 변경되었습니다."}
