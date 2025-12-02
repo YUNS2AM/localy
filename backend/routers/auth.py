@@ -31,11 +31,16 @@ class EmailVerificationCheck(BaseModel):
 
 # 이메일 인증번호 발송 API
 @router.post("/send-verification")
-async def send_verification_code(request: EmailVerificationRequest):
+async def send_verification_code(request: EmailVerificationRequest, db: Session = Depends(get_db)):
     """
     이메일로 6자리 인증번호를 발송합니다.
     Gmail SMTP를 사용합니다.
     """
+    # 이메일 중복 체크
+    existing_user = db.query(User).filter(User.user_email == request.email).first()
+    if existing_user:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="이미 사용 중인 이메일입니다.")
+    
     # 6자리 랜덤 인증번호 생성
     verification_code = ''.join(random.choices(string.digits, k=6))
     

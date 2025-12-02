@@ -27,10 +27,21 @@ export function SignupForm({ onSwitchToLogin, onSignupSuccess, onBack }: SignupF
     const [verificationCode, setVerificationCode] = useState('');
     const [isCodeSent, setIsCodeSent] = useState(false);
     const [isEmailVerified, setIsEmailVerified] = useState(false);
+    const [timeLeft, setTimeLeft] = useState(0); // 남은 시간 (초)
     const [zipcode, setZipcode] = useState('');
     const [address, setAddress] = useState('');
     const [detailAddress, setDetailAddress] = useState('');
     const [birthdate, setBirthdate] = useState('');
+
+    // 타이머 카운트다운
+    useEffect(() => {
+        if (timeLeft > 0 && !isEmailVerified) {
+            const timer = setInterval(() => {
+                setTimeLeft(prev => prev - 1);
+            }, 1000);
+            return () => clearInterval(timer);
+        }
+    }, [timeLeft, isEmailVerified]);
 
     useEffect(() => {
         const script = document.createElement('script');
@@ -80,6 +91,10 @@ export function SignupForm({ onSwitchToLogin, onSignupSuccess, onBack }: SignupF
             return;
         }
 
+        // ⭐ 이 두 줄을 여기로 이동 (try 블록 위로)
+        setIsCodeSent(true);
+        setTimeLeft(180);
+
         try {
             console.log('API 요청 시작: /auth/send-verification');
             const response = await fetch('http://localhost:8000/auth/send-verification', {
@@ -93,19 +108,19 @@ export function SignupForm({ onSwitchToLogin, onSignupSuccess, onBack }: SignupF
 
             if (!response.ok) {
                 alert(data.detail || '인증번호 발송에 실패했습니다.');
+                setIsCodeSent(false);
+                setTimeLeft(0);
                 return;
             }
 
-            setIsCodeSent(true);
-            // 개발 환경에서는 dev_code도 표시
             if (data.dev_code) {
-                alert(`인증번호가 이메일로 전송되었습니다.\n\n[개발용 인증번호: ${data.dev_code}]`);
-            } else {
-                alert('인증번호가 이메일로 전송되었습니다.\n이메일을 확인해주세요.');
+                console.log('🔑 [개발용 인증번호]:', data.dev_code);
             }
         } catch (error) {
             console.error('Send verification error:', error);
             alert('서버 연결에 실패했습니다. 백엔드 서버가 실행 중인지 확인해주세요.');
+            setIsCodeSent(false);
+            setTimeLeft(0);
         }
     };
 
@@ -242,10 +257,22 @@ export function SignupForm({ onSwitchToLogin, onSignupSuccess, onBack }: SignupF
                         <motion.button type="button" onClick={handleSendVerificationCode} disabled={isEmailVerified || !email} whileHover={{ scale: isEmailVerified ? 1 : 1.05 }} whileTap={{ scale: isEmailVerified ? 1 : 0.95 }} style={{ minWidth: '85px', padding: '12px 16px', height: '46px', borderRadius: '12px', border: 'none', background: isEmailVerified ? '#ccc' : 'linear-gradient(135deg, #2D8B5F 0%, #3BA474 100%)', color: 'white', fontSize: '13px', fontWeight: '600', cursor: isEmailVerified ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{isCodeSent ? '재전송' : '인증번호'}</motion.button>
                     </div>
                     {isCodeSent && !isEmailVerified && (
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                            <input type="text" value={verificationCode} onChange={(e) => setVerificationCode(e.target.value)} placeholder="인증번호 6자리" maxLength={6} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '2px solid rgba(45, 139, 95, 0.2)', fontSize: '14px', boxSizing: 'border-box' }} />
-                            <motion.button type="button" onClick={handleVerifyCode} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} style={{ minWidth: '65px', padding: '12px 16px', height: '46px', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg, #2D8B5F 0%, #3BA474 100%)', color: 'white', fontSize: '13px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>확인</motion.button>
-                        </div>
+                        <>
+                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                <input type="text" value={verificationCode} onChange={(e) => setVerificationCode(e.target.value)} placeholder="인증번호 6자리" maxLength={6} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '2px solid rgba(45, 139, 95, 0.2)', fontSize: '14px', boxSizing: 'border-box' }} />
+                                <motion.button type="button" onClick={handleVerifyCode} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} style={{ minWidth: '65px', padding: '12px 16px', height: '46px', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg, #2D8B5F 0%, #3BA474 100%)', color: 'white', fontSize: '13px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>확인</motion.button>
+                            </div>
+                            {timeLeft > 0 && (
+                                <div style={{ marginTop: '4px', fontSize: '13px', color: '#e74c3c', fontWeight: '600' }}>
+                                    ⏱️ {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}
+                                </div>
+                            )}
+                            {timeLeft === 0 && (
+                                <div style={{ marginTop: '4px', fontSize: '13px', color: '#e74c3c', fontWeight: '600' }}>
+                                    ⚠️ 인증시간이 만료되었습니다. 재전송 버튼을 눌러주세요.
+                                </div>
+                            )}
+                        </>
                     )}
                 </FormField>
 
