@@ -1,7 +1,7 @@
 import { AnimatePresence } from 'motion/react';
 import { useState } from 'react';
 import { LoginForm } from './LoginForm';
-import { SignupForm } from './SignupForm';
+import { SignupForm } from './SignUpForm';
 import { TermsAgreementForm } from './TermsAgreementForm';
 
 interface AuthPageProps {
