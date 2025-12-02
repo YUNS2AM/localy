@@ -3,20 +3,11 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 # 1. DB 연결 주소 (URL)
-# [방법 1] SQLite 사용 시 (파일로 저장됨, 윈도우에서 연습용으로 추천)
-SQLALCHEMY_DATABASE_URL = "sqlite:///./my_travel_project.db"
-
-# [방법 2] 나중에 MySQL 사용 시 (DB 담당자분이 주신 정보로 수정 필요)
 # SQLALCHEMY_DATABASE_URL = "mysql+pymysql://유저명:비밀번호@localhost:3306/db이름"
+SQLALCHEMY_DATABASE_URL = "mysql+pymysql://travel:travel12!!@192.168.0.222:3306/travel_platform"
 
 # 2. 엔진 생성 (DB와 연결되는 핵심 객체)
-# connect_args={"check_same_thread": False}는 SQLite에서만 필요합니다. MySQL 쓸 땐 지우세요.
-if SQLALCHEMY_DATABASE_URL.startswith("sqlite"):
-    engine = create_engine(
-        SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
-    )
-else:
-    engine = create_engine(SQLALCHEMY_DATABASE_URL)
+engine = create_engine(SQLALCHEMY_DATABASE_URL)
 
 # 3. 세션 생성 (실제 데이터 작업을 수행하는 도구)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

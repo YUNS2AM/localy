@@ -2,7 +2,6 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routers import auth
 from core.database import engine, Base  # 1. engine과 Base 가져오기
-from models import User  # 2. 모델을 가져와야 테이블이 생성됨 (중요!)
 
 # 3. 서버 시작 때 테이블 생성 (없으면 만들고, 있으면 넘어감)
 Base.metadata.create_all(bind=engine)
@@ -26,6 +25,15 @@ origins = [
     "http://127.0.0.1:5173",
     "http://localhost:5174",
     "http://127.0.0.1:5174",
+    "http://192.168.0.222:3000",
+    "http://192.168.0.222:5000",
+    "http://192.168.0.222:5173",
+    "http://192.168.0.222:5174",
+    "http://192.168.0.222:8000",
+    "http://192.168.0.222:8001",
+    "http://192.168.0.222:8002",
+    "http://192.168.0.222:8003",
+    "http://192.168.0.222:8004",
 ]
 
 app.add_middleware(

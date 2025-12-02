@@ -1,21 +1,18 @@
+<<<<<<< HEAD
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowLeft, User, Mail, MapPin, Calendar, X } from 'lucide-react';
+=======
+import { motion } from 'motion/react';
+import { ArrowLeft, User, Mail, MapPin, Calendar, Phone } from 'lucide-react'; // 아이콘 추가
+>>>>>>> a5aebdbfa5d564bdc2977f33786076dfa982be50
 import { useState, useEffect } from 'react';
-import { validateName, validateNickname } from '../utils/validation';
-
-const myUrl = window.location.protocol + "//" + window.location.hostname + ":8000";
-
-declare global {
-    interface Window {
-        daum: any;
-    }
-}
 
 interface PersonalInfoEditScreenProps {
     onClose: () => void;
 }
 
 export function PersonalInfoEditScreen({ onClose }: PersonalInfoEditScreenProps) {
+    // 1. 회원가입 때 썼던 필드들과 동일하게 상태 관리
     const [userInfo, setUserInfo] = useState({
         user_id: '',
         user_name: '',
@@ -29,6 +26,7 @@ export function PersonalInfoEditScreen({ onClose }: PersonalInfoEditScreenProps)
         user_gender: ''
     });
 
+<<<<<<< HEAD
     // Validation errors
     const [nameError, setNameError] = useState('');
     const [nicknameError, setNicknameError] = useState('');
@@ -41,6 +39,9 @@ export function PersonalInfoEditScreen({ onClose }: PersonalInfoEditScreenProps)
     // Address modal state
     const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
 
+=======
+    // 2. 화면이 열리면 localStorage에서 내 정보 가져오기
+>>>>>>> a5aebdbfa5d564bdc2977f33786076dfa982be50
     useEffect(() => {
         const userStr = localStorage.getItem('user');
         if (userStr) {
@@ -48,27 +49,15 @@ export function PersonalInfoEditScreen({ onClose }: PersonalInfoEditScreenProps)
                 const user = JSON.parse(userStr);
                 setUserInfo(prev => ({
                     ...prev,
-                    ...user
+                    ...user // 저장된 정보로 덮어쓰기
                 }));
-                setOriginalNickname(user.user_nickname || '');
             } catch (e) {
                 console.error('사용자 정보 로딩 실패:', e);
             }
         }
-
-        // Load Daum Postcode script
-        const script = document.createElement('script');
-        script.src = '//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js';
-        script.async = true;
-        document.body.appendChild(script);
-
-        return () => {
-            if (document.body.contains(script)) {
-                document.body.removeChild(script);
-            }
-        };
     }, []);
 
+<<<<<<< HEAD
     // Open address modal and init Daum Postcode
     useEffect(() => {
         if (isAddressModalOpen && window.daum) {
@@ -115,38 +104,25 @@ export function PersonalInfoEditScreen({ onClose }: PersonalInfoEditScreenProps)
         }
     };
 
+=======
+    // 3. 수정된 정보 저장하기
+>>>>>>> a5aebdbfa5d564bdc2977f33786076dfa982be50
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-
-        // Validate name and nickname
-        const nameValidation = validateName(userInfo.user_name);
-        const nicknameValidation = validateNickname(userInfo.user_nickname);
-
-        if (!nameValidation.isValid) {
-            alert(nameValidation.errorMessage);
-            return;
-        }
-
-        if (!nicknameValidation.isValid) {
-            alert(nicknameValidation.errorMessage);
-            return;
-        }
-
-        // Check if nickname changed and if duplicate check was done
-        if (userInfo.user_nickname !== originalNickname) {
-            if (!isNicknameChecked || !isNicknameAvailable) {
-                alert('닉네임 중복확인을 완료해주세요.');
-                return;
-            }
-        }
-
         const userStr = localStorage.getItem('user');
 
         if (userStr) {
             try {
                 const currentUser = JSON.parse(userStr);
+                // 기존 정보에 수정된 정보 합치기
                 const updatedUser = { ...currentUser, ...userInfo };
+
+                // localStorage 업데이트
                 localStorage.setItem('user', JSON.stringify(updatedUser));
+
+                // TODO: 여기서 백엔드 서버로도 전송해야 완벽합니다.
+                // fetch('http://localhost:8000/auth/update', { ... })
+
                 alert('개인정보가 수정되었습니다.');
                 onClose();
             } catch (e) {
@@ -156,13 +132,13 @@ export function PersonalInfoEditScreen({ onClose }: PersonalInfoEditScreenProps)
         }
     };
 
+    // 우편번호 찾기 (Daum Postcode) - SignUpForm과 동일하게 사용
     const handleSearchAddress = () => {
         setIsAddressModalOpen(true);
     };
 
-    const nicknameChanged = userInfo.user_nickname !== originalNickname;
-
     return (
+<<<<<<< HEAD
         <>
             <motion.div
                 initial={{ opacity: 0, x: 20 }}
@@ -189,6 +165,59 @@ export function PersonalInfoEditScreen({ onClose }: PersonalInfoEditScreenProps)
                     gap: '12px',
                     backgroundColor: 'rgba(255,255,255,0.95)',
                     backdropFilter: 'blur(10px)'
+=======
+        <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            transition={{ duration: 0.3 }}
+            style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                height: '100vh',
+                backgroundColor: 'white',
+                zIndex: 1200,
+                display: 'flex',
+                flexDirection: 'column'
+            }}
+        >
+            {/* 헤더 */}
+            <div style={{
+                padding: '20px 30px',
+                borderBottom: '1px solid #eee',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                backgroundColor: 'rgba(255,255,255,0.95)',
+                backdropFilter: 'blur(10px)'
+            }}>
+                <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={onClose}
+                    style={{
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '50%',
+                        border: 'none',
+                        backgroundColor: '#f8f9fa',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                    }}
+                >
+                    <ArrowLeft size={20} color="#666" />
+                </motion.button>
+                <h2 style={{
+                    fontSize: '24px',
+                    fontWeight: 'bold',
+                    color: '#2D8B5F',
+                    margin: 0
+>>>>>>> a5aebdbfa5d564bdc2977f33786076dfa982be50
                 }}>
                     <motion.button
                         whileHover={{ scale: 1.1 }}
@@ -218,6 +247,7 @@ export function PersonalInfoEditScreen({ onClose }: PersonalInfoEditScreenProps)
                     </h2>
                 </div>
 
+<<<<<<< HEAD
                 <div style={{ flex: 1, overflowY: 'auto', padding: '30px' }}>
                     <form onSubmit={handleSubmit}>
 
@@ -230,6 +260,61 @@ export function PersonalInfoEditScreen({ onClose }: PersonalInfoEditScreenProps)
                                 disabled
                                 readOnly
                                 style={{ ...inputStyle, backgroundColor: '#f5f5f5', color: '#999', cursor: 'not-allowed' }}
+=======
+            {/* 입력 폼 영역 */}
+            <div style={{ flex: 1, overflowY: 'scroll', padding: '30px', paddingBottom: '100px' }}>
+                <form onSubmit={handleSubmit}>
+
+                    {/* 아이디 (수정 불가) */}
+                    <div style={{ marginBottom: '24px' }}>
+                        <label style={labelStyle}>아이디</label>
+                        <input
+                            type="text"
+                            value={userInfo.user_id}
+                            disabled
+                            style={{ ...inputStyle, backgroundColor: '#f5f5f5', color: '#999' }}
+                        />
+                    </div>
+
+                    {/* 이름 */}
+                    <div style={{ marginBottom: '24px' }}>
+                        <label style={labelStyle}>이름</label>
+                        <div style={{ position: 'relative' }}>
+                            <User size={18} style={iconStyle} />
+                            <input
+                                type="text"
+                                value={userInfo.user_name}
+                                onChange={(e) => setUserInfo({ ...userInfo, user_name: e.target.value })}
+                                style={inputStyle}
+                            />
+                        </div>
+                    </div>
+
+                    {/* 닉네임 */}
+                    <div style={{ marginBottom: '24px' }}>
+                        <label style={labelStyle}>닉네임</label>
+                        <div style={{ position: 'relative' }}>
+                            <User size={18} style={iconStyle} />
+                            <input
+                                type="text"
+                                value={userInfo.user_nickname}
+                                onChange={(e) => setUserInfo({ ...userInfo, user_nickname: e.target.value })}
+                                style={inputStyle}
+                            />
+                        </div>
+                    </div>
+
+                    {/* 이메일 */}
+                    <div style={{ marginBottom: '24px' }}>
+                        <label style={labelStyle}>이메일</label>
+                        <div style={{ position: 'relative' }}>
+                            <Mail size={18} style={iconStyle} />
+                            <input
+                                type="email"
+                                value={userInfo.user_email}
+                                onChange={(e) => setUserInfo({ ...userInfo, user_email: e.target.value })}
+                                style={inputStyle}
+>>>>>>> a5aebdbfa5d564bdc2977f33786076dfa982be50
                             />
                         </div>
 
@@ -308,6 +393,7 @@ export function PersonalInfoEditScreen({ onClose }: PersonalInfoEditScreenProps)
                             )}
                         </div>
 
+<<<<<<< HEAD
                         {/* 이메일 (수정 불가) */}
                         <div style={{ marginBottom: '24px' }}>
                             <label style={labelStyle}>이메일</label>
@@ -450,6 +536,24 @@ export function PersonalInfoEditScreen({ onClose }: PersonalInfoEditScreenProps)
                             alignItems: 'center',
                             justifyContent: 'center',
                             padding: '20px'
+=======
+                    {/* 저장 버튼 */}
+                    <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        type="submit"
+                        style={{
+                            width: '100%',
+                            padding: '16px',
+                            borderRadius: '12px',
+                            border: 'none',
+                            background: 'linear-gradient(135deg, #2D8B5F 0%, #3BA474 100%)',
+                            color: 'white',
+                            fontSize: '16px',
+                            fontWeight: 'bold',
+                            cursor: 'pointer',
+                            boxShadow: '0 4px 12px rgba(45, 139, 95, 0.3)'
+>>>>>>> a5aebdbfa5d564bdc2977f33786076dfa982be50
                         }}
                         onClick={() => setIsAddressModalOpen(false)}
                     >
@@ -506,6 +610,7 @@ export function PersonalInfoEditScreen({ onClose }: PersonalInfoEditScreenProps)
     );
 }
 
+// 스타일 객체들
 const labelStyle: React.CSSProperties = {
     display: 'block',
     fontSize: '14px',
@@ -516,7 +621,7 @@ const labelStyle: React.CSSProperties = {
 
 const inputStyle: React.CSSProperties = {
     width: '100%',
-    padding: '14px 14px 14px 44px',
+    padding: '14px 14px 14px 44px', // 아이콘 공간 확보
     borderRadius: '12px',
     border: '1px solid #e0e0e0',
     fontSize: '15px',

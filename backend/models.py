@@ -1,8 +1,10 @@
-from sqlalchemy import Column, Integer, String, Date, DateTime, func
+from sqlalchemy import Column, Integer, String, Date, DateTime, func, ForeignKey, Text 
 from core.database import Base
 
+
+# 유저 정보 모델
 class User(Base):
-    __tablename__ = "users"
+    __tablename__ = "user"
 
     # 기본키, 자동 증가
     user_seq_no = Column(Integer, primary_key=True, index=True, autoincrement=True)
@@ -39,3 +41,70 @@ class User(Base):
     user_update_date = Column(DateTime, default=func.now(), onupdate=func.now())
     user_delete_date = Column(DateTime, nullable=True)
     user_delete_check = Column(String(1), default="N", nullable=False)
+
+
+# 페르소나 보드 모델
+class Persona(Base):
+    __tablename__ = "persona"
+
+    # 기본키, 자동 증가
+    persona_seq_no = Column(Integer, primary_key=True, index=True, autoincrement=True, comment="페르소나 index 번호")
+    
+    # 외래키 - 유저
+    user_seq_no = Column(Integer, ForeignKey('user.user_seq_no'), nullable=False, comment="유저 index 번호")
+    
+    # 페르소나 정보
+    persona_id = Column(String(100), nullable=False, comment="페르소나 id")
+    persona_like_food = Column(String(150), nullable=False, comment="선호 음식")
+    persona_hate_food = Column(String(150), nullable=False, comment="비선호 음식")
+    persona_theme = Column(String(150), nullable=True, comment="선호 테마")
+    persona_like_region = Column(String(150), nullable=False, comment="선호 지역")
+    persona_avoid_region = Column(String(150), nullable=False, comment="비선호 지역")
+    persona_transportation = Column(String(150), nullable=False, comment="이동 수단")
+    persona_travel_budget = Column(Integer, nullable=False, comment="여행 예산")
+    
+    # 주의: 원본 DB 컬럼명에 공백이 있어서 백틱 사용
+    persona_accommodation_type = Column('persona_accommodation type', String(150), nullable=False, comment="숙소 종류")
+
+
+# 게시판 모델
+class Board(Base):
+    __tablename__ = "board"
+
+    # 기본키, 자동 증가
+    board_seq_no = Column(Integer, primary_key=True, index=True, autoincrement=True, comment="게시판 index 번호")
+    
+    # 외래키 - 유저
+    user_seq_no = Column(Integer, ForeignKey('user.user_seq_no'), nullable=False, comment="작성자 index 번호")
+    
+    # 게시판 정보
+    board_title = Column(String(200), nullable=False, comment="게시글 제목")
+    board_content = Column(Text, nullable=False, comment="게시글 내용")
+    board_views = Column(Integer, default=0, nullable=False, comment="조회수")
+    board_category = Column(String(50), nullable=True, comment="게시글 카테고리")
+    
+    # 관리 정보
+    board_create_date = Column(DateTime, default=func.now(), nullable=False, comment="게시글 작성일")
+    board_update_date = Column(DateTime, default=func.now(), onupdate=func.now(), comment="게시글 수정일")
+    board_delete_date = Column(DateTime, nullable=True, comment="게시글 삭제일")
+    board_delete_check = Column(String(1), default="N", nullable=False, comment="삭제 여부")
+
+
+# 파일 모델
+class File(Base):
+    __tablename__ = "file"
+
+    # 기본키, 자동 증가
+    file_seq_no = Column(Integer, primary_key=True, index=True, autoincrement=True, comment="파일 index 번호")
+    
+    # 외래키 - 유저, 게시판
+    user_seq_no = Column(Integer, ForeignKey('user.user_seq_no'), nullable=True, comment="유저 index 번호")
+    board_seq_no = Column(Integer, ForeignKey('board.board_seq_no'), nullable=True, comment="게시판 index 번호")
+    
+    # 파일 정보
+    file_name = Column(Text, nullable=False, comment="파일 이름")
+    file_rename = Column(Text, nullable=False, comment="변경된 파일 이름")
+    file_extension = Column(String(5), nullable=True, comment="파일 확장자")
+    
+    # 관리 정보
+    file_create_date = Column(DateTime, default=func.now(), nullable=False, comment="파일 생성일")
