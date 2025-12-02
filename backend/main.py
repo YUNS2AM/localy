@@ -18,6 +18,7 @@ app = FastAPI(
 # 리액트 기본 포트인 3000번을 허용해줍니다.
 origins = [
     "http://localhost:3000",
+    "http://localhost:5173",
     "http://127.0.0.1:3000",
 ]
 

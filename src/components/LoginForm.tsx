@@ -17,11 +17,19 @@ export function LoginForm({ onSwitchToSignup, onLoginSuccess, onBack }: LoginFor
 
         try {
             const response = await fetch('http://localhost:8000/auth/login', {
-                // ... (기존 코드와 동일)
+                method: 'POST',  // 👈 이게 꼭 있어야 합니다! (없으면 405 에러 남)
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    user_id: username,
+                    user_pw: password
+                })
             });
 
             if (!response.ok) {
-                // ... (에러 처리)
+                const error = await response.json();
+                alert(error.detail || '로그인에 실패했습니다.');
                 return;
             }
 
