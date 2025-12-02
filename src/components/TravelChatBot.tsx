@@ -14,6 +14,7 @@ interface TravelData {
     startDate: string;
     endDate: string;
     region: string;
+    placeName?: string;  // 실제 선택한 여행지 이름
 }
 
 interface Message {
@@ -412,6 +413,17 @@ export function TravelChatBot({ onClose, onComplete, onMapSelect }: TravelChatBo
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
                                 onClick={() => {
+                                    // 여행 데이터 완성 및 전달 (실제 선택한 여행지 이름 포함)
+                                    if (travelData.participants && travelData.startDate && travelData.endDate && travelData.region) {
+                                        onComplete({
+                                            participants: travelData.participants,
+                                            startDate: travelData.startDate,
+                                            endDate: travelData.endDate,
+                                            region: travelData.region,
+                                            placeName: selectedDestination.name  // 실제 선택한 장소 이름
+                                        });
+                                    }
+
                                     if (onMapSelect) {
                                         onMapSelect({
                                             lat: selectedDestination.lat,
@@ -419,7 +431,6 @@ export function TravelChatBot({ onClose, onComplete, onMapSelect }: TravelChatBo
                                             name: selectedDestination.name
                                         });
                                     }
-                                    onClose();
                                 }}
                                 style={{
                                     flex: 1,
