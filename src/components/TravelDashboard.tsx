@@ -8,6 +8,8 @@ import { PersonalInfoEditScreen } from './PersonalInfoEditScreen';
 import { PersonaEditScreen } from './PersonaEditScreen';
 import { useState } from 'react';
 
+const myUrl = window.location.protocol + "//" + window.location.hostname + ":8000";
+
 interface TravelItem {
     id: number;
     title: string;
@@ -129,7 +131,7 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
 
         try {
             // 1. 백엔드에 삭제 요청 보내기
-            const response = await fetch(`http://localhost:8000/auth/withdraw/${userId}`, {
+            const response = await fetch(`${myUrl}/auth/withdraw/${userId}`, {
                 method: 'DELETE',
             });
 

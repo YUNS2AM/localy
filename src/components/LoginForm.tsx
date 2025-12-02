@@ -2,6 +2,8 @@ import { motion } from 'motion/react';
 import { useState } from 'react';
 import { User, Lock } from 'lucide-react';
 
+const myUrl = window.location.protocol + "//" + window.location.hostname + ":8000";
+
 interface LoginFormProps {
     onSwitchToSignup: () => void;
     onLoginSuccess: () => void;
@@ -18,7 +20,7 @@ export function LoginForm({ onSwitchToSignup, onLoginSuccess, onBack }: LoginFor
 
         try {
             console.log('API 요청 시작...');
-            const response = await fetch('http://localhost:8000/auth/login', {
+            const response = await fetch(`${myUrl}/auth/login`, {
                 method: 'POST',  // 👈 이게 꼭 있어야 합니다! (없으면 405 에러 남)
                 headers: {
                     'Content-Type': 'application/json',

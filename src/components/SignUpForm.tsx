@@ -2,6 +2,8 @@ import { motion } from 'motion/react';
 import { useState, useEffect } from 'react';
 import { User, Lock, Mail, Calendar, MapPin } from 'lucide-react';
 
+const myUrl = window.location.protocol + "//" + window.location.hostname + ":8000";
+
 interface SignupFormProps {
     onSwitchToLogin: () => void;
     onSignupSuccess: (name: string) => void;
@@ -65,7 +67,7 @@ export function SignupForm({ onSwitchToLogin, onSignupSuccess, onBack }: SignupF
 
         try {
             console.log('API 요청 시작: /auth/check-username/', username);
-            const response = await fetch(`http://localhost:8000/auth/check-username/${encodeURIComponent(username)}`);
+            const response = await fetch(`${myUrl}/auth/check-username/${encodeURIComponent(username)}`);
             console.log('API 응답 받음:', response.status);
             const data = await response.json();
             console.log('응답 데이터:', data);
@@ -97,7 +99,7 @@ export function SignupForm({ onSwitchToLogin, onSignupSuccess, onBack }: SignupF
 
         try {
             console.log('API 요청 시작: /auth/send-verification');
-            const response = await fetch('http://localhost:8000/auth/send-verification', {
+            const response = await fetch(`${myUrl}/auth/send-verification`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email })
@@ -133,7 +135,7 @@ export function SignupForm({ onSwitchToLogin, onSignupSuccess, onBack }: SignupF
 
         try {
             console.log('API 요청 시작: /auth/verify-email');
-            const response = await fetch('http://localhost:8000/auth/verify-email', {
+            const response = await fetch(`${myUrl}/auth/verify-email`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, code: verificationCode })
@@ -180,7 +182,7 @@ export function SignupForm({ onSwitchToLogin, onSignupSuccess, onBack }: SignupF
         }
 
         try {
-            const response = await fetch('http://localhost:8000/auth/signup', {
+            const response = await fetch(`${myUrl}/auth/signup`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

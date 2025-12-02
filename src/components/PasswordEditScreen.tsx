@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { motion } from 'motion/react';
 import { ArrowLeft } from 'lucide-react';
 
+const myUrl = window.location.protocol + "//" + window.location.hostname + ":8000";
+
 // [수정 1] userId를 부모에게서 받아오도록 props 추가
 interface PasswordEditScreenProps {
     onClose: () => void;
@@ -29,7 +31,7 @@ export function PasswordEditScreen({ onClose, userId }: PasswordEditScreenProps)
         setIsLoading(true);
 
         try {
-            const response = await fetch('http://localhost:8000/auth/change-password', {
+            const response = await fetch(`${myUrl}/auth/change-password`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
