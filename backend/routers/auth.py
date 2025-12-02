@@ -11,12 +11,29 @@ from email.mime.multipart import MIMEMultipart
 import random
 import string
 from datetime import datetime, timedelta
+from datetime import datetime, timedelta
+from jose import JWTError, jwt
 
 router = APIRouter(
     prefix="/auth",
     tags=["auth"],
     responses={404: {"description": "Not found"}},
 )
+
+
+# 토큰 설정 (실제 배포할 땐 아주 복잡한 비밀번호로 환경변수에 숨겨야 함)
+SECRET_KEY = "localy_secret_key_very_secure" 
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 # 24시간 유지
+
+# 토큰 생성 함수
+def create_access_token(data: dict):
+    to_encode = data.copy()
+    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
 
 # 이메일 인증번호 임시 저장소 (실제로는 Redis 또는 DB 사용 권장)
 verification_codes = {}
@@ -172,27 +189,88 @@ async def signup(user: UserCreate, db: Session = Depends(get_db)):
 # 2. 로그인 API
 @router.post("/login")
 async def login(user_req: UserLogin, db: Session = Depends(get_db)):
-    # ID로 유저 찾기
+    # 1. ID로 유저 찾기
     user = db.query(User).filter(User.user_id == user_req.user_id).first()
     
-    # 유저가 없거나 비밀번호가 틀리면 에러
+    # 2. 유저가 없거나 비밀번호가 틀리면 에러
     if not user or not verify_password(user_req.user_pw, user.user_pw):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="아이디 또는 비밀번호가 잘못되었습니다.",
         )
     
-    # [수정됨] 로그인 성공 시 모든 정보를 다 반환합니다!
+    # 3. [추가됨] 토큰(자유이용권) 발급!
+    access_token = create_access_token(data={"sub": user.user_id})
+    
+    # 4. 토큰과 유저 정보를 같이 반환
     return {
         "message": "로그인 성공!",
+        "access_token": access_token, # <-- 이게 핵심!
+        "token_type": "bearer",
         "user_id": user.user_id,
         "user_name": user.user_name,
         "user_nickname": user.user_nickname,
         "user_email": user.user_email,
-        "user_phone": user.user_phone if hasattr(user, "user_phone") else "", # 폰 번호가 있다면
+        "user_phone": user.user_phone if hasattr(user, "user_phone") else "",
         "user_post": user.user_post,
         "user_addr1": user.user_addr1,
         "user_addr2": user.user_addr2,
-        "user_birth": str(user.user_birth) if user.user_birth else "", # 날짜는 문자열로 변환
+        "user_birth": str(user.user_birth) if user.user_birth else "",
         "user_gender": user.user_gender
     }
+
+
+# -----------------------------------------------------------
+# [추가] 비밀번호 변경 기능
+# -----------------------------------------------------------
+
+# 1. 비밀번호 변경 요청에 사용할 데이터 틀
+class PasswordChangeRequest(BaseModel):
+    user_id: str          # 누구의 비밀번호를 바꿀지 알아야 함
+    current_password: str # 현재 비밀번호 (확인용)
+    new_password: str     # 바꿀 비밀번호
+
+@router.put("/change-password")
+async def change_password(request: PasswordChangeRequest, db: Session = Depends(get_db)):
+    """
+    로그인한 사용자의 비밀번호를 변경합니다.
+    """
+    # 1. 사용자 찾기 (DB에서 user_id로 조회)
+    user = db.query(User).filter(User.user_id == request.user_id).first()
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
+
+    # 2. 현재 비밀번호가 맞는지 확인
+    if not verify_password(request.current_password, user.user_pw):
+        raise HTTPException(status_code=400, detail="현재 비밀번호가 일치하지 않습니다.")
+
+    # 3. 새 비밀번호 암호화해서 저장
+    user.user_pw = get_password_hash(request.new_password)
+    
+    db.add(user)
+    db.commit() # 저장 확정
+    
+    return {"message": "비밀번호가 성공적으로 변경되었습니다."}
+
+
+    # -----------------------------------------------------------
+# [추가] 회원탈퇴 기능
+# -----------------------------------------------------------
+
+@router.delete("/withdraw/{user_id}")
+async def withdraw_user(user_id: str, db: Session = Depends(get_db)):
+    """
+    회원 탈퇴: DB에서 사용자 정보를 영구 삭제합니다.
+    """
+    # 1. 삭제할 유저 찾기
+    user = db.query(User).filter(User.user_id == user_id).first()
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
+    
+    # 2. 유저 삭제 (주의: 연관된 여행 정보가 있다면 DB 설정에 따라 같이 삭제되거나 에러가 날 수 있음)
+    db.delete(user)
+    db.commit()
+    
+    return {"message": "회원 탈퇴가 완료되었습니다. 그동안 이용해 주셔서 감사합니다."}

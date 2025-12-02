@@ -1,11 +1,63 @@
+import { useState } from 'react';
 import { motion } from 'motion/react';
 import { ArrowLeft } from 'lucide-react';
 
+// [수정 1] userId를 부모에게서 받아오도록 props 추가
 interface PasswordEditScreenProps {
     onClose: () => void;
+    userId: string; // 로그인한 진짜 아이디
 }
 
-export function PasswordEditScreen({ onClose }: PasswordEditScreenProps) {
+export function PasswordEditScreen({ onClose, userId }: PasswordEditScreenProps) {
+    const [currentPassword, setCurrentPassword] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        if (!currentPassword || !newPassword || !confirmPassword) {
+            alert('모든 항목을 입력해주세요.');
+            return;
+        }
+        if (newPassword !== confirmPassword) {
+            alert('새 비밀번호가 일치하지 않습니다.');
+            return;
+        }
+
+        setIsLoading(true);
+
+        try {
+            const response = await fetch('http://localhost:8000/auth/change-password', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    user_id: userId, // [수정 2] 진짜 로그인한 아이디 사용!
+                    current_password: currentPassword,
+                    new_password: newPassword
+                })
+            });
+
+            const data = await response.json(); // 서버 메시지 확인용
+
+            if (response.ok) {
+                alert('비밀번호가 수정되었습니다.');
+                onClose();
+            } else {
+                // 서버가 보내준 구체적인 에러 메시지 띄우기 (예: 현재 비번 불일치)
+                alert(data.detail || '비밀번호 변경에 실패했습니다.');
+            }
+        } catch (error) {
+            console.error(error);
+            alert('서버 오류가 발생했습니다.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     return (
         <motion.div
             initial={{ opacity: 0 }}
@@ -24,7 +76,6 @@ export function PasswordEditScreen({ onClose }: PasswordEditScreenProps) {
                 flexDirection: 'column'
             }}
         >
-            {/* Header */}
             <div style={{
                 padding: '20px 30px',
                 borderBottom: '1px solid #eee',
@@ -50,112 +101,80 @@ export function PasswordEditScreen({ onClose }: PasswordEditScreenProps) {
                 >
                     <ArrowLeft size={20} color="#666" />
                 </motion.button>
-                <h2 style={{
-                    fontSize: '24px',
-                    fontWeight: 'bold',
-                    color: '#2D8B5F',
-                    margin: 0
-                }}>
+                <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#2D8B5F', margin: 0 }}>
                     비밀번호 수정
                 </h2>
             </div>
 
-            {/* Content */}
             <div style={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
-                <form onSubmit={(e) => { e.preventDefault(); alert('비밀번호가 수정되었습니다.'); }}>
-                    {/* 현재 비밀번호 */}
+                <form onSubmit={handleSubmit}>
                     <div style={{ marginBottom: '20px' }}>
-                        <label style={{
-                            display: 'block',
-                            fontSize: '14px',
-                            fontWeight: '600',
-                            color: '#333',
-                            marginBottom: '8px'
-                        }}>
+                        <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#333', marginBottom: '8px' }}>
                             현재 비밀번호
                         </label>
                         <input
                             type="password"
+                            value={currentPassword}
+                            onChange={(e) => setCurrentPassword(e.target.value)}
                             placeholder="현재 비밀번호를 입력하세요"
-                            style={{
-                                width: '100%',
-                                padding: '14px',
-                                borderRadius: '8px',
-                                border: '1px solid #ddd',
-                                fontSize: '15px',
-                                boxSizing: 'border-box'
-                            }}
+                            style={{ width: '100%', padding: '14px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '15px', boxSizing: 'border-box' }}
                         />
                     </div>
 
-                    {/* 새 비밀번호 */}
                     <div style={{ marginBottom: '20px' }}>
-                        <label style={{
-                            display: 'block',
-                            fontSize: '14px',
-                            fontWeight: '600',
-                            color: '#333',
-                            marginBottom: '8px'
-                        }}>
+                        <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#333', marginBottom: '8px' }}>
                             새 비밀번호
                         </label>
                         <input
                             type="password"
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
                             placeholder="새 비밀번호를 입력하세요"
-                            style={{
-                                width: '100%',
-                                padding: '14px',
-                                borderRadius: '8px',
-                                border: '1px solid #ddd',
-                                fontSize: '15px',
-                                boxSizing: 'border-box'
-                            }}
+                            style={{ width: '100%', padding: '14px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '15px', boxSizing: 'border-box' }}
                         />
                     </div>
 
-                    {/* 새 비밀번호 확인 */}
                     <div style={{ marginBottom: '30px' }}>
-                        <label style={{
-                            display: 'block',
-                            fontSize: '14px',
-                            fontWeight: '600',
-                            color: '#333',
-                            marginBottom: '8px'
-                        }}>
+                        <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#333', marginBottom: '8px' }}>
                             새 비밀번호 확인
                         </label>
                         <input
                             type="password"
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
                             placeholder="새 비밀번호를 다시 입력하세요"
                             style={{
                                 width: '100%',
                                 padding: '14px',
                                 borderRadius: '8px',
-                                border: '1px solid #ddd',
+                                border: `1px solid ${confirmPassword && newPassword !== confirmPassword ? 'red' : '#ddd'}`,
                                 fontSize: '15px',
                                 boxSizing: 'border-box'
                             }}
                         />
+                        {confirmPassword && newPassword !== confirmPassword && (
+                            <p style={{ color: 'red', fontSize: '12px', marginTop: '5px' }}>비밀번호가 일치하지 않습니다.</p>
+                        )}
                     </div>
 
-                    {/* 수정 버튼 */}
                     <motion.button
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         type="submit"
+                        disabled={isLoading}
                         style={{
                             width: '100%',
                             padding: '16px',
                             borderRadius: '12px',
                             border: 'none',
-                            background: 'linear-gradient(135deg, #2D8B5F 0%, #3BA474 100%)',
+                            background: isLoading ? '#ccc' : 'linear-gradient(135deg, #2D8B5F 0%, #3BA474 100%)',
                             color: 'white',
                             fontSize: '16px',
                             fontWeight: '600',
-                            cursor: 'pointer'
+                            cursor: isLoading ? 'not-allowed' : 'pointer'
                         }}
                     >
-                        비밀번호 수정
+                        {isLoading ? '변경 중...' : '비밀번호 수정'}
                     </motion.button>
                 </form>
             </div>
