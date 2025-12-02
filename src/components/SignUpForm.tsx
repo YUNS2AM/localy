@@ -1,6 +1,7 @@
 import { motion } from 'motion/react';
 import { useState, useEffect } from 'react';
 import { User, Lock, Mail, Calendar, MapPin } from 'lucide-react';
+import { validateUsername, validateName, validatePassword, validateNickname, getPasswordStrength } from '../utils/validation';
 
 const myUrl = window.location.protocol + "//" + window.location.hostname + ":8000";
 
@@ -24,18 +25,25 @@ export function SignupForm({ onSwitchToLogin, onSignupSuccess, onBack }: SignupF
     const [passwordConfirm, setPasswordConfirm] = useState('');
     const [name, setName] = useState('');
     const [nickname, setNickname] = useState('');
+    const [isNicknameChecked, setIsNicknameChecked] = useState(false);
+    const [isNicknameAvailable, setIsNicknameAvailable] = useState(false);
     const [gender, setGender] = useState<'Male' | 'Female'>('Male');
     const [email, setEmail] = useState('');
     const [verificationCode, setVerificationCode] = useState('');
     const [isCodeSent, setIsCodeSent] = useState(false);
     const [isEmailVerified, setIsEmailVerified] = useState(false);
-    const [timeLeft, setTimeLeft] = useState(0); // 남은 시간 (초)
+    const [timeLeft, setTimeLeft] = useState(0);
     const [zipcode, setZipcode] = useState('');
     const [address, setAddress] = useState('');
     const [detailAddress, setDetailAddress] = useState('');
     const [birthdate, setBirthdate] = useState('');
 
-    // 타이머 카운트다운
+    // Validation errors
+    const [usernameError, setUsernameError] = useState('');
+    const [nameError, setNameError] = useState('');
+    const [nicknameError, setNicknameError] = useState('');
+    const [passwordError, setPasswordError] = useState('');
+
     useEffect(() => {
         if (timeLeft > 0 && !isEmailVerified) {
             const timer = setInterval(() => {
@@ -60,8 +68,11 @@ export function SignupForm({ onSwitchToLogin, onSignupSuccess, onBack }: SignupF
 
     const handleCheckUsername = async () => {
         console.log('🔍 중복확인 버튼 클릭! username:', username);
-        if (!username) {
-            alert('아이디를 입력해주세요.');
+
+        const validation = validateUsername(username);
+        if (!validation.isValid) {
+            setUsernameError(validation.errorMessage || '');
+            alert(validation.errorMessage);
             return;
         }
 
@@ -76,12 +87,47 @@ export function SignupForm({ onSwitchToLogin, onSignupSuccess, onBack }: SignupF
             setIsUsernameAvailable(data.available);
 
             if (data.available) {
+                setUsernameError('');
                 alert('사용 가능한 아이디입니다.');
             } else {
+                setUsernameError('이미 사용 중인 아이디입니다.');
                 alert('이미 사용 중인 아이디입니다.');
             }
         } catch (error) {
             console.error('Username check error:', error);
+            alert('서버 연결에 실패했습니다.');
+        }
+    };
+
+    const handleCheckNickname = async () => {
+        console.log('🔍 닉네임 중복확인 버튼 클릭! nickname:', nickname);
+
+        const validation = validateNickname(nickname);
+        if (!validation.isValid) {
+            setNicknameError(validation.errorMessage || '');
+            alert(validation.errorMessage);
+            return;
+        }
+
+        try {
+            console.log('API 요청 시작: /auth/check-nickname/', nickname);
+            const response = await fetch(`${myUrl}/auth/check-nickname/${encodeURIComponent(nickname)}`);
+            console.log('API 응답 받음:', response.status);
+            const data = await response.json();
+            console.log('응답 데이터:', data);
+
+            setIsNicknameChecked(true);
+            setIsNicknameAvailable(data.available);
+
+            if (data.available) {
+                setNicknameError('');
+                alert('사용 가능한 닉네임입니다.');
+            } else {
+                setNicknameError('이미 사용 중인 닉네임입니다.');
+                alert('이미 사용 중인 닉네임입니다.');
+            }
+        } catch (error) {
+            console.error('Nickname check error:', error);
             alert('서버 연결에 실패했습니다.');
         }
     };
@@ -93,7 +139,6 @@ export function SignupForm({ onSwitchToLogin, onSignupSuccess, onBack }: SignupF
             return;
         }
 
-        // ⭐ 이 두 줄을 여기로 이동 (try 블록 위로)
         setIsCodeSent(true);
         setTimeLeft(180);
 
@@ -168,8 +213,35 @@ export function SignupForm({ onSwitchToLogin, onSignupSuccess, onBack }: SignupF
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        // Validate all fields
+        const usernameValidation = validateUsername(username);
+        const nameValidation = validateName(name);
+        const nicknameValidation = validateNickname(nickname);
+        const passwordValidation = validatePassword(password);
+
+        if (!usernameValidation.isValid) {
+            alert(usernameValidation.errorMessage);
+            return;
+        }
         if (!isUsernameChecked || !isUsernameAvailable) {
             alert('아이디 중복확인을 완료해주세요.');
+            return;
+        }
+        if (!nameValidation.isValid) {
+            alert(nameValidation.errorMessage);
+            return;
+        }
+        if (!nicknameValidation.isValid) {
+            alert(nicknameValidation.errorMessage);
+            return;
+        }
+        if (!isNicknameChecked || !isNicknameAvailable) {
+            alert('닉네임 중복확인을 완료해주세요.');
+            return;
+        }
+        if (!passwordValidation.isValid) {
+            alert(passwordValidation.errorMessage);
             return;
         }
         if (password !== passwordConfirm) {
@@ -223,13 +295,16 @@ export function SignupForm({ onSwitchToLogin, onSignupSuccess, onBack }: SignupF
             <form onSubmit={handleSubmit}>
                 <FormField label="아이디" icon={<User size={20} />} verified={isUsernameChecked && isUsernameAvailable}>
                     <div style={{ display: 'flex', gap: '8px' }}>
-                        <input type="text" value={username} onChange={(e) => { setUsername(e.target.value); setIsUsernameChecked(false); }} placeholder="아이디" required style={{ flex: 1, padding: '12px 12px 12px 44px', borderRadius: '12px', border: '2px solid rgba(45, 139, 95, 0.2)', fontSize: '14px', boxSizing: 'border-box' }} />
+                        <input type="text" value={username} onChange={(e) => { const val = e.target.value; setUsername(val); setIsUsernameChecked(false); const validation = validateUsername(val); setUsernameError(validation.isValid ? '' : validation.errorMessage || ''); }} placeholder="아이디 (영문, 숫자만)" required style={{ flex: 1, padding: '12px 12px 12px 44px', borderRadius: '12px', border: usernameError ? '2px solid #e74c3c' : '2px solid rgba(45, 139, 95, 0.2)', fontSize: '14px', boxSizing: 'border-box' }} />
                         <motion.button type="button" onClick={handleCheckUsername} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} style={{ minWidth: '85px', padding: '12px 16px', height: '46px', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg, #2D8B5F 0%, #3BA474 100%)', color: 'white', fontSize: '13px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>중복확인</motion.button>
                     </div>
+                    {usernameError && <p style={{ color: '#e74c3c', fontSize: '12px', marginTop: '4px' }}>{usernameError}</p>}
                 </FormField>
 
                 <FormField label="비밀번호" icon={<Lock size={20} />}>
-                    <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="비밀번호" required style={{ width: '100%', padding: '12px 12px 12px 44px', borderRadius: '12px', border: '2px solid rgba(45, 139, 95, 0.2)', fontSize: '14px', boxSizing: 'border-box' }} />
+                    <input type="password" value={password} onChange={(e) => { const val = e.target.value; if (val.length <= 16) { setPassword(val); const validation = validatePassword(val); setPasswordError(validation.isValid ? '' : validation.errorMessage || ''); } }} placeholder="8-16자, 영어, 특수문자 1개, 숫자 3개 이상" required maxLength={16} style={{ width: '100%', padding: '12px 12px 12px 44px', borderRadius: '12px', border: passwordError ? '2px solid #e74c3c' : '2px solid rgba(45, 139, 95, 0.2)', fontSize: '14px', boxSizing: 'border-box' }} />
+                    {password && (() => { const strength = getPasswordStrength(password); return (<div style={{ marginTop: '8px', fontSize: '12px' }}><div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}><span style={{ color: strength.hasValidLength ? '#27ae60' : '#e74c3c' }}>✓ 8-16자</span><span style={{ color: strength.hasEnglish ? '#27ae60' : '#e74c3c' }}>✓ 영어 포함</span><span style={{ color: strength.hasSpecialChar ? '#27ae60' : '#e74c3c' }}>✓ 특수문자 1개 이상</span><span style={{ color: strength.hasMinNumbers ? '#27ae60' : '#e74c3c' }}>✓ 숫자 3개 이상</span></div></div>); })()}
+                    {passwordError && <p style={{ color: '#e74c3c', fontSize: '12px', marginTop: '4px' }}>{passwordError}</p>}
                 </FormField>
 
                 <FormField label="비밀번호 확인" icon={<Lock size={20} />}>
@@ -238,11 +313,16 @@ export function SignupForm({ onSwitchToLogin, onSignupSuccess, onBack }: SignupF
                 </FormField>
 
                 <FormField label="이름" icon={<User size={20} />}>
-                    <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="이름" required style={{ width: '100%', padding: '12px 12px 12px 44px', borderRadius: '12px', border: '2px solid rgba(45, 139, 95, 0.2)', fontSize: '14px', boxSizing: 'border-box' }} />
+                    <input type="text" value={name} onChange={(e) => { const val = e.target.value; setName(val); const validation = validateName(val); setNameError(validation.isValid ? '' : validation.errorMessage || ''); }} placeholder="이름 (한글만)" required style={{ width: '100%', padding: '12px 12px 12px 44px', borderRadius: '12px', border: nameError ? '2px solid #e74c3c' : '2px solid rgba(45, 139, 95, 0.2)', fontSize: '14px', boxSizing: 'border-box' }} />
+                    {nameError && <p style={{ color: '#e74c3c', fontSize: '12px', marginTop: '4px' }}>{nameError}</p>}
                 </FormField>
 
-                <FormField label="닉네임" icon={<User size={20} />}>
-                    <input type="text" value={nickname} onChange={(e) => setNickname(e.target.value)} placeholder="닉네임" required style={{ width: '100%', padding: '12px 12px 12px 44px', borderRadius: '12px', border: '2px solid rgba(45, 139, 95, 0.2)', fontSize: '14px', boxSizing: 'border-box' }} />
+                <FormField label="닉네임" icon={<User size={20} />} verified={isNicknameChecked && isNicknameAvailable}>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                        <input type="text" value={nickname} onChange={(e) => { const val = e.target.value; setNickname(val); setIsNicknameChecked(false); const validation = validateNickname(val); setNicknameError(validation.isValid ? '' : validation.errorMessage || ''); }} placeholder="닉네임" required style={{ flex: 1, padding: '12px 12px 12px 44px', borderRadius: '12px', border: nicknameError ? '2px solid #e74c3c' : '2px solid rgba(45, 139, 95, 0.2)', fontSize: '14px', boxSizing: 'border-box' }} />
+                        <motion.button type="button" onClick={handleCheckNickname} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} style={{ minWidth: '85px', padding: '12px 16px', height: '46px', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg, #2D8B5F 0%, #3BA474 100%)', color: 'white', fontSize: '13px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>중복확인</motion.button>
+                    </div>
+                    {nicknameError && <p style={{ color: '#e74c3c', fontSize: '12px', marginTop: '4px' }}>{nicknameError}</p>}
                 </FormField>
 
                 <div style={{ marginBottom: '20px' }}>

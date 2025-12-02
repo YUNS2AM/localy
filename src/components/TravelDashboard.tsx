@@ -1006,6 +1006,10 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
                 {isPasswordEditOpen && (
                     <PasswordEditScreen
                         onClose={() => setIsPasswordEditOpen(false)}
+                        onBack={() => {
+                            setIsPasswordEditOpen(false);
+                            setIsAccountManagementOpen(true);
+                        }}
                         userId={getUserId()}
                     />
                 )}

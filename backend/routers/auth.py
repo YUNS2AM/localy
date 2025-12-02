@@ -11,7 +11,6 @@ from email.mime.multipart import MIMEMultipart
 import random
 import string
 from datetime import datetime, timedelta
-from datetime import datetime, timedelta
 from jose import JWTError, jwt
 
 router = APIRouter(
@@ -151,6 +150,14 @@ async def check_username(user_id: str, db: Session = Depends(get_db)):
         return {"available": False, "message": "이미 사용 중인 아이디입니다."}
     return {"available": True, "message": "사용 가능한 아이디입니다."}
 
+# 닉네임 중복 확인 API
+@router.get("/check-nickname/{nickname}")
+async def check_nickname(nickname: str, db: Session = Depends(get_db)):
+    db_user = db.query(User).filter(User.user_nickname == nickname).first()
+    if db_user:
+        return {"available": False, "message": "이미 사용 중인 닉네임입니다."}
+    return {"available": True, "message": "사용 가능한 닉네임입니다."}
+
 # 1. 회원가입 API
 @router.post("/signup", response_model=UserResponse)
 async def signup(user: UserCreate, db: Session = Depends(get_db)):
@@ -254,7 +261,7 @@ async def change_password(request: PasswordChangeRequest, db: Session = Depends(
     return {"message": "비밀번호가 성공적으로 변경되었습니다."}
 
 
-    # -----------------------------------------------------------
+# -----------------------------------------------------------
 # [추가] 회원탈퇴 기능
 # -----------------------------------------------------------
 

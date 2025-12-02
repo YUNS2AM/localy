@@ -1,16 +1,17 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
 import { ArrowLeft } from 'lucide-react';
+import { validatePassword, getPasswordStrength } from '../utils/validation';
 
 const myUrl = window.location.protocol + "//" + window.location.hostname + ":8000";
 
-// [수정 1] userId를 부모에게서 받아오도록 props 추가
 interface PasswordEditScreenProps {
     onClose: () => void;
-    userId: string; // 로그인한 진짜 아이디
+    onBack?: () => void;
+    userId: string;
 }
 
-export function PasswordEditScreen({ onClose, userId }: PasswordEditScreenProps) {
+export function PasswordEditScreen({ onClose, onBack, userId }: PasswordEditScreenProps) {
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -23,6 +24,14 @@ export function PasswordEditScreen({ onClose, userId }: PasswordEditScreenProps)
             alert('모든 항목을 입력해주세요.');
             return;
         }
+
+        // 새 비밀번호 검증
+        const passwordValidation = validatePassword(newPassword);
+        if (!passwordValidation.isValid) {
+            alert(passwordValidation.errorMessage || '비밀번호 요구사항을 충족하지 않습니다.');
+            return;
+        }
+
         if (newPassword !== confirmPassword) {
             alert('새 비밀번호가 일치하지 않습니다.');
             return;
@@ -37,19 +46,18 @@ export function PasswordEditScreen({ onClose, userId }: PasswordEditScreenProps)
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    user_id: userId, // [수정 2] 진짜 로그인한 아이디 사용!
+                    user_id: userId,
                     current_password: currentPassword,
                     new_password: newPassword
                 })
             });
 
-            const data = await response.json(); // 서버 메시지 확인용
+            const data = await response.json();
 
             if (response.ok) {
                 alert('비밀번호가 수정되었습니다.');
                 onClose();
             } else {
-                // 서버가 보내준 구체적인 에러 메시지 띄우기 (예: 현재 비번 불일치)
                 alert(data.detail || '비밀번호 변경에 실패했습니다.');
             }
         } catch (error) {
@@ -88,7 +96,7 @@ export function PasswordEditScreen({ onClose, userId }: PasswordEditScreenProps)
                 <motion.button
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.95 }}
-                    onClick={onClose}
+                    onClick={onBack || onClose}
                     style={{
                         width: '40px',
                         height: '40px',
@@ -130,10 +138,29 @@ export function PasswordEditScreen({ onClose, userId }: PasswordEditScreenProps)
                         <input
                             type="password"
                             value={newPassword}
-                            onChange={(e) => setNewPassword(e.target.value)}
-                            placeholder="새 비밀번호를 입력하세요"
+                            onChange={(e) => {
+                                const val = e.target.value;
+                                if (val.length <= 16) {
+                                    setNewPassword(val);
+                                }
+                            }}
+                            placeholder="8-16자, 영어, 특수문자 1개, 숫자 3개 이상"
+                            maxLength={16}
                             style={{ width: '100%', padding: '14px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '15px', boxSizing: 'border-box' }}
                         />
+                        {newPassword && (() => {
+                            const strength = getPasswordStrength(newPassword);
+                            return (
+                                <div style={{ marginTop: '8px', fontSize: '12px' }}>
+                                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                                        <span style={{ color: strength.hasValidLength ? '#27ae60' : '#e74c3c' }}>✓ 8-16자</span>
+                                        <span style={{ color: strength.hasEnglish ? '#27ae60' : '#e74c3c' }}>✓ 영어 포함</span>
+                                        <span style={{ color: strength.hasSpecialChar ? '#27ae60' : '#e74c3c' }}>✓ 특수문자 1개 이상</span>
+                                        <span style={{ color: strength.hasMinNumbers ? '#27ae60' : '#e74c3c' }}>✓ 숫자 3개 이상</span>
+                                    </div>
+                                </div>
+                            );
+                        })()}
                     </div>
 
                     <div style={{ marginBottom: '30px' }}>
