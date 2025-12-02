@@ -146,7 +146,7 @@ export function SignupForm({ onSwitchToLogin, onSignupSuccess, onBack }: SignupF
     return (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }} style={{ width: '100%', maxWidth: '500px', maxHeight: '85vh', overflowY: 'auto', padding: '40px', background: 'rgba(255, 255, 255, 0.95)', backdropFilter: 'blur(20px)', borderRadius: '20px', boxShadow: '0 8px 32px rgba(45, 139, 95, 0.2)', border: '1px solid rgba(45, 139, 95, 0.1)' }}>
             <h2 style={{ color: '#2D8B5F', fontSize: '28px', fontWeight: '700', marginBottom: '8px', textAlign: 'center' }}>회원가입</h2>
-            <p style={{ color: '#666', fontSize: '14px', marginBottom: '32px', textAlign: 'center' }}>AIX Travel과 함께 특별한 여행을 시작하세요</p>
+            <p style={{ color: '#666', fontSize: '14px', marginBottom: '32px', textAlign: 'center' }}>야옹이와 함께 특별한 여행을 시작하세요</p>
 
             <form onSubmit={handleSubmit}>
                 <FormField label="아이디" icon={<User size={20} />} verified={isUsernameChecked && isUsernameAvailable}>
