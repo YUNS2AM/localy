@@ -11,12 +11,29 @@ from email.mime.multipart import MIMEMultipart
 import random
 import string
 from datetime import datetime, timedelta
+from datetime import datetime, timedelta
+from jose import JWTError, jwt
 
 router = APIRouter(
     prefix="/auth",
     tags=["auth"],
     responses={404: {"description": "Not found"}},
 )
+
+
+# 토큰 설정 (실제 배포할 땐 아주 복잡한 비밀번호로 환경변수에 숨겨야 함)
+SECRET_KEY = "localy_secret_key_very_secure" 
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 # 24시간 유지
+
+# 토큰 생성 함수
+def create_access_token(data: dict):
+    to_encode = data.copy()
+    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
 
 # 이메일 인증번호 임시 저장소 (실제로는 Redis 또는 DB 사용 권장)
 verification_codes = {}
@@ -167,28 +184,33 @@ async def signup(user: UserCreate, db: Session = Depends(get_db)):
 # 2. 로그인 API
 @router.post("/login")
 async def login(user_req: UserLogin, db: Session = Depends(get_db)):
-    # ID로 유저 찾기
+    # 1. ID로 유저 찾기
     user = db.query(User).filter(User.user_id == user_req.user_id).first()
     
-    # 유저가 없거나 비밀번호가 틀리면 에러
+    # 2. 유저가 없거나 비밀번호가 틀리면 에러
     if not user or not verify_password(user_req.user_pw, user.user_pw):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="아이디 또는 비밀번호가 잘못되었습니다.",
         )
     
-    # [수정됨] 로그인 성공 시 모든 정보를 다 반환합니다!
+    # 3. [추가됨] 토큰(자유이용권) 발급!
+    access_token = create_access_token(data={"sub": user.user_id})
+    
+    # 4. 토큰과 유저 정보를 같이 반환
     return {
         "message": "로그인 성공!",
+        "access_token": access_token, # <-- 이게 핵심!
+        "token_type": "bearer",
         "user_id": user.user_id,
         "user_name": user.user_name,
         "user_nickname": user.user_nickname,
         "user_email": user.user_email,
-        "user_phone": user.user_phone if hasattr(user, "user_phone") else "", # 폰 번호가 있다면
+        "user_phone": user.user_phone if hasattr(user, "user_phone") else "",
         "user_post": user.user_post,
         "user_addr1": user.user_addr1,
         "user_addr2": user.user_addr2,
-        "user_birth": str(user.user_birth) if user.user_birth else "", # 날짜는 문자열로 변환
+        "user_birth": str(user.user_birth) if user.user_birth else "",
         "user_gender": user.user_gender
     }
 

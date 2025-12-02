@@ -113,11 +113,8 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
     // 로그아웃 핸들러
     const handleLogout = () => {
         if (window.confirm('로그아웃 하시겠습니까?')) {
-            // 1. 로컬스토리지에 저장된 유저 정보 삭제
-            localStorage.removeItem('user');
-            // (선택사항) 여행 정보 등 캐시도 지우고 싶으면 localStorage.clear() 사용
-
-            // 2. 메인 화면(로그인 화면)으로 이동
+            localStorage.removeItem('user');  // 유저 정보 삭제
+            localStorage.removeItem('token'); // [추가] 토큰(세션) 삭제
             window.location.href = '/';
         }
     };
