@@ -113,16 +113,41 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
     // 로그아웃 핸들러
     const handleLogout = () => {
         if (window.confirm('로그아웃 하시겠습니까?')) {
+            // 1. 로컬스토리지에 저장된 유저 정보 삭제
             localStorage.removeItem('user');
+            // (선택사항) 여행 정보 등 캐시도 지우고 싶으면 localStorage.clear() 사용
+
+            // 2. 메인 화면(로그인 화면)으로 이동
             window.location.href = '/';
         }
     };
 
     // 회원탈퇴 핸들러
-    const handleWithdraw = () => {
-        if (window.confirm('정말로 회원탈퇴 하시겠습니까?\n모든 데이터가 삭제되며 복구할 수 없습니다.')) {
-            localStorage.clear();
-            window.location.href = '/';
+    const handleWithdraw = async () => {
+        if (!window.confirm('정말로 회원탈퇴 하시겠습니까?\n삭제된 데이터는 복구할 수 없습니다.')) {
+            return;
+        }
+
+        const userId = getUserId(); // 아까 만든 그 함수 사용!
+
+        try {
+            // 1. 백엔드에 삭제 요청 보내기
+            const response = await fetch(`http://localhost:8000/auth/withdraw/${userId}`, {
+                method: 'DELETE',
+            });
+
+            if (response.ok) {
+                alert('회원 탈퇴가 완료되었습니다.\n이용해 주셔서 감사합니다.');
+
+                // 2. 브라우저에 남은 흔적 지우기 (로그아웃과 동일)
+                localStorage.clear();
+                window.location.href = '/';
+            } else {
+                alert('회원 탈퇴 처리에 실패했습니다. 관리자에게 문의해주세요.');
+            }
+        } catch (error) {
+            console.error('Withdrawal error:', error);
+            alert('서버 연결 중 오류가 발생했습니다.');
         }
     };
 

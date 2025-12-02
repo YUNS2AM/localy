@@ -225,3 +225,25 @@ async def change_password(request: PasswordChangeRequest, db: Session = Depends(
     db.commit() # 저장 확정
     
     return {"message": "비밀번호가 성공적으로 변경되었습니다."}
+
+
+    # -----------------------------------------------------------
+# [추가] 회원탈퇴 기능
+# -----------------------------------------------------------
+
+@router.delete("/withdraw/{user_id}")
+async def withdraw_user(user_id: str, db: Session = Depends(get_db)):
+    """
+    회원 탈퇴: DB에서 사용자 정보를 영구 삭제합니다.
+    """
+    # 1. 삭제할 유저 찾기
+    user = db.query(User).filter(User.user_id == user_id).first()
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
+    
+    # 2. 유저 삭제 (주의: 연관된 여행 정보가 있다면 DB 설정에 따라 같이 삭제되거나 에러가 날 수 있음)
+    db.delete(user)
+    db.commit()
+    
+    return {"message": "회원 탈퇴가 완료되었습니다. 그동안 이용해 주셔서 감사합니다."}
