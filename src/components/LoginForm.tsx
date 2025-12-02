@@ -14,8 +14,10 @@ export function LoginForm({ onSwitchToSignup, onLoginSuccess, onBack }: LoginFor
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        console.log('로그인 버튼 클릭됨! username:', username, 'password:', password);
 
         try {
+            console.log('API 요청 시작...');
             const response = await fetch('http://localhost:8000/auth/login', {
                 method: 'POST',  // 👈 이게 꼭 있어야 합니다! (없으면 405 에러 남)
                 headers: {
@@ -26,6 +28,8 @@ export function LoginForm({ onSwitchToSignup, onLoginSuccess, onBack }: LoginFor
                     user_pw: password
                 })
             });
+
+            console.log('API 응답 받음:', response.status);
 
             if (!response.ok) {
                 const error = await response.json();

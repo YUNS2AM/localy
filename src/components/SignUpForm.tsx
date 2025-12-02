@@ -1,4 +1,3 @@
-
 import { motion } from 'motion/react';
 import { useState, useEffect } from 'react';
 import { User, Lock, Mail, Calendar, MapPin } from 'lucide-react';
@@ -34,7 +33,6 @@ export function SignupForm({ onSwitchToLogin, onSignupSuccess, onBack }: SignupF
     const [birthdate, setBirthdate] = useState('');
 
     useEffect(() => {
-        // Daum 우편번호 스크립트 로드
         const script = document.createElement('script');
         script.src = '//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js';
         script.async = true;
@@ -48,14 +46,18 @@ export function SignupForm({ onSwitchToLogin, onSignupSuccess, onBack }: SignupF
     }, []);
 
     const handleCheckUsername = async () => {
+        console.log('🔍 중복확인 버튼 클릭! username:', username);
         if (!username) {
             alert('아이디를 입력해주세요.');
             return;
         }
 
         try {
+            console.log('API 요청 시작: /auth/check-username/', username);
             const response = await fetch(`http://localhost:8000/auth/check-username/${encodeURIComponent(username)}`);
+            console.log('API 응답 받음:', response.status);
             const data = await response.json();
+            console.log('응답 데이터:', data);
 
             setIsUsernameChecked(true);
             setIsUsernameAvailable(data.available);
@@ -67,20 +69,75 @@ export function SignupForm({ onSwitchToLogin, onSignupSuccess, onBack }: SignupF
             }
         } catch (error) {
             console.error('Username check error:', error);
+            alert('서버 연결에 실패했습니다.');
+        }
+    };
+
+    const handleSendVerificationCode = async () => {
+        console.log('📧 인증번호 버튼 클릭! email:', email);
+        if (!email) {
+            alert('이메일을 입력해주세요.');
+            return;
+        }
+
+        try {
+            console.log('API 요청 시작: /auth/send-verification');
+            const response = await fetch('http://localhost:8000/auth/send-verification', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email })
+            });
+            console.log('API 응답 받음:', response.status);
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                alert(data.detail || '인증번호 발송에 실패했습니다.');
+                return;
+            }
+
+            setIsCodeSent(true);
+            // 개발 환경에서는 dev_code도 표시
+            if (data.dev_code) {
+                alert(`인증번호가 이메일로 전송되었습니다.\n\n[개발용 인증번호: ${data.dev_code}]`);
+            } else {
+                alert('인증번호가 이메일로 전송되었습니다.\n이메일을 확인해주세요.');
+            }
+        } catch (error) {
+            console.error('Send verification error:', error);
             alert('서버 연결에 실패했습니다. 백엔드 서버가 실행 중인지 확인해주세요.');
         }
     };
 
-    const handleSendVerificationCode = () => {
-        console.log('Sending verification code to:', email);
-        setIsCodeSent(true);
-        alert('인증번호가 이메일로 전송되었습니다.');
-    };
+    const handleVerifyCode = async () => {
+        console.log('✅ 인증번호 확인 버튼 클릭! code:', verificationCode);
+        if (!verificationCode) {
+            alert('인증번호를 입력해주세요.');
+            return;
+        }
 
-    const handleVerifyCode = () => {
-        console.log('Verifying code:', verificationCode);
-        setIsEmailVerified(true);
-        alert('이메일 인증이 완료되었습니다.');
+        try {
+            console.log('API 요청 시작: /auth/verify-email');
+            const response = await fetch('http://localhost:8000/auth/verify-email', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, code: verificationCode })
+            });
+            console.log('API 응답 받음:', response.status);
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                alert(data.detail || '인증번호가 올바르지 않습니다.');
+                return;
+            }
+
+            setIsEmailVerified(true);
+            alert('이메일 인증이 완료되었습니다.');
+        } catch (error) {
+            console.error('Verify code error:', error);
+            alert('서버 연결에 실패했습니다. 백엔드 서버가 실행 중인지 확인해주세요.');
+        }
     };
 
     const handleSearchAddress = () => {
@@ -110,9 +167,7 @@ export function SignupForm({ onSwitchToLogin, onSignupSuccess, onBack }: SignupF
         try {
             const response = await fetch('http://localhost:8000/auth/signup', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     user_id: username,
                     user_pw: password,
@@ -139,7 +194,7 @@ export function SignupForm({ onSwitchToLogin, onSignupSuccess, onBack }: SignupF
             onSignupSuccess(name);
         } catch (error) {
             console.error('Signup error:', error);
-            alert('서버 연결에 실패했습니다. 백엔드 서버가 실행 중인지 확인해주세요.');
+            alert('서버 연결에 실패했습니다.');
         }
     };
 
@@ -173,11 +228,8 @@ export function SignupForm({ onSwitchToLogin, onSignupSuccess, onBack }: SignupF
                     <input type="text" value={nickname} onChange={(e) => setNickname(e.target.value)} placeholder="닉네임" required style={{ width: '100%', padding: '12px 12px 12px 44px', borderRadius: '12px', border: '2px solid rgba(45, 139, 95, 0.2)', fontSize: '14px', boxSizing: 'border-box' }} />
                 </FormField>
 
-                {/* Gender Toggle */}
                 <div style={{ marginBottom: '20px' }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', color: '#2D8B5F', fontSize: '14px', fontWeight: '500' }}>
-                        성별
-                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', color: '#2D8B5F', fontSize: '14px', fontWeight: '500' }}>성별</label>
                     <div style={{ display: 'flex', gap: '8px' }}>
                         <motion.button type="button" onClick={() => setGender('Male')} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: gender === 'Male' ? '2px solid #4A90E2' : '2px solid #ddd', background: gender === 'Male' ? 'linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)' : 'white', color: gender === 'Male' ? 'white' : '#666', fontSize: '14px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.2s' }}>Male</motion.button>
                         <motion.button type="button" onClick={() => setGender('Female')} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: gender === 'Female' ? '2px solid #E84A5F' : '2px solid #ddd', background: gender === 'Female' ? 'linear-gradient(135deg, #E84A5F 0%, #D63447 100%)' : 'white', color: gender === 'Female' ? 'white' : '#666', fontSize: '14px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.2s' }}>Female</motion.button>
@@ -216,7 +268,6 @@ export function SignupForm({ onSwitchToLogin, onSignupSuccess, onBack }: SignupF
                     <input type="date" value={birthdate} onChange={(e) => setBirthdate(e.target.value)} required style={{ width: '100%', padding: '12px 12px 12px 44px', borderRadius: '12px', border: '2px solid rgba(45, 139, 95, 0.2)', fontSize: '14px', boxSizing: 'border-box' }} />
                 </FormField>
 
-                {/* 버튼들 */}
                 <div style={{ display: 'flex', gap: '12px', marginTop: '24px', marginBottom: '16px' }}>
                     <motion.button type="button" onClick={onBack} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} style={{ flex: 1, padding: '14px', borderRadius: '12px', border: '2px solid #2D8B5F', background: 'white', color: '#2D8B5F', fontSize: '16px', fontWeight: '600', cursor: 'pointer' }}>돌아가기</motion.button>
                     <motion.button type="submit" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} style={{ flex: 1, padding: '14px', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg, #2D8B5F 0%, #3BA474 100%)', color: 'white', fontSize: '16px', fontWeight: '600', cursor: 'pointer', boxShadow: '0 4px 12px rgba(45, 139, 95, 0.3)' }}>가입하기</motion.button>
