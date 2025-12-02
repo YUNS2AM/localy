@@ -964,7 +964,10 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
             <AnimatePresence>
                 {isPasswordEditOpen && (
                     <PasswordEditScreen
-                        onClose={() => setIsPasswordEditOpen(false)}
+                        onClose={() => {
+                            setIsPasswordEditOpen(false);
+                            setIsAccountManagementOpen(true);
+                        }}
                     />
                 )}
             </AnimatePresence>
@@ -973,7 +976,10 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
             <AnimatePresence>
                 {isPersonalInfoEditOpen && (
                     <PersonalInfoEditScreen
-                        onClose={() => setIsPersonalInfoEditOpen(false)}
+                        onClose={() => {
+                            setIsPersonalInfoEditOpen(false);
+                            setIsAccountManagementOpen(true);
+                        }}
                     />
                 )}
             </AnimatePresence>
@@ -982,7 +988,10 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
             <AnimatePresence>
                 {isPersonaEditOpen && (
                     <PersonaEditScreen
-                        onClose={() => setIsPersonaEditOpen(false)}
+                        onClose={() => {
+                            setIsPersonaEditOpen(false);
+                            setIsAccountManagementOpen(true);
+                        }}
                     />
                 )}
             </AnimatePresence>
