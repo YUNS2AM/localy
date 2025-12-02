@@ -1,6 +1,6 @@
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { useState, useEffect } from 'react';
-import { User, Lock, Mail, Calendar, MapPin } from 'lucide-react';
+import { User, Lock, Mail, Calendar, MapPin, X } from 'lucide-react';
 import { validateUsername, validateName, validatePassword, validateNickname, getPasswordStrength } from '../utils/validation';
 
 const myUrl = window.location.protocol + "//" + window.location.hostname + ":8000";
@@ -44,6 +44,9 @@ export function SignupForm({ onSwitchToLogin, onSignupSuccess, onBack }: SignupF
     const [nicknameError, setNicknameError] = useState('');
     const [passwordError, setPasswordError] = useState('');
 
+    // Address modal state
+    const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
+
     useEffect(() => {
         if (timeLeft > 0 && !isEmailVerified) {
             const timer = setInterval(() => {
@@ -65,6 +68,21 @@ export function SignupForm({ onSwitchToLogin, onSignupSuccess, onBack }: SignupF
             }
         };
     }, []);
+
+    // Open address modal and init Daum Postcode
+    useEffect(() => {
+        if (isAddressModalOpen && window.daum) {
+            new window.daum.Postcode({
+                oncomplete: function (data: any) {
+                    setZipcode(data.zonecode);
+                    setAddress(data.roadAddress);
+                    setIsAddressModalOpen(false);
+                },
+                width: '100%',
+                height: ' 100%'
+            }).embed(document.getElementById('daum-postcode-container'));
+        }
+    }, [isAddressModalOpen]);
 
     const handleCheckUsername = async () => {
         console.log('🔍 중복확인 버튼 클릭! username:', username);
@@ -203,12 +221,7 @@ export function SignupForm({ onSwitchToLogin, onSignupSuccess, onBack }: SignupF
     };
 
     const handleSearchAddress = () => {
-        new window.daum.Postcode({
-            oncomplete: function (data: any) {
-                setZipcode(data.zonecode);
-                setAddress(data.roadAddress);
-            }
-        }).open();
+        setIsAddressModalOpen(true);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -288,106 +301,180 @@ export function SignupForm({ onSwitchToLogin, onSignupSuccess, onBack }: SignupF
     };
 
     return (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }} style={{ width: '100%', maxWidth: '500px', maxHeight: '85vh', overflowY: 'auto', padding: '40px', background: 'rgba(255, 255, 255, 0.95)', backdropFilter: 'blur(20px)', borderRadius: '20px', boxShadow: '0 8px 32px rgba(45, 139, 95, 0.2)', border: '1px solid rgba(45, 139, 95, 0.1)' }}>
-            <h2 style={{ color: '#2D8B5F', fontSize: '28px', fontWeight: '700', marginBottom: '8px', textAlign: 'center' }}>회원가입</h2>
-            <p style={{ color: '#666', fontSize: '14px', marginBottom: '32px', textAlign: 'center' }}>야옹이와 함께 특별한 여행을 시작하세요</p>
+        <>
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }} style={{ width: '100%', maxWidth: '500px', maxHeight: '85vh', overflowY: 'auto', padding: '40px', background: 'rgba(255, 255, 255, 0.95)', backdropFilter: 'blur(20px)', borderRadius: '20px', boxShadow: '0 8px 32px rgba(45, 139, 95, 0.2)', border: '1px solid rgba(45, 139, 95, 0.1)' }}>
+                <h2 style={{ color: '#2D8B5F', fontSize: '28px', fontWeight: '700', marginBottom: '8px', textAlign: 'center' }}>회원가입</h2>
+                <p style={{ color: '#666', fontSize: '14px', marginBottom: '32px', textAlign: 'center' }}>야옹이와 함께 특별한 여행을 시작하세요</p>
 
-            <form onSubmit={handleSubmit}>
-                <FormField label="아이디" icon={<User size={20} />} verified={isUsernameChecked && isUsernameAvailable}>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                        <input type="text" value={username} onChange={(e) => { const val = e.target.value; setUsername(val); setIsUsernameChecked(false); const validation = validateUsername(val); setUsernameError(validation.isValid ? '' : validation.errorMessage || ''); }} placeholder="아이디 (영문, 숫자만)" required style={{ flex: 1, padding: '12px 12px 12px 44px', borderRadius: '12px', border: usernameError ? '2px solid #e74c3c' : '2px solid rgba(45, 139, 95, 0.2)', fontSize: '14px', boxSizing: 'border-box' }} />
-                        <motion.button type="button" onClick={handleCheckUsername} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} style={{ minWidth: '85px', padding: '12px 16px', height: '46px', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg, #2D8B5F 0%, #3BA474 100%)', color: 'white', fontSize: '13px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>중복확인</motion.button>
+                <form onSubmit={handleSubmit}>
+                    <FormField label="아이디" icon={<User size={20} />} verified={isUsernameChecked && isUsernameAvailable}>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                            <input type="text" value={username} onChange={(e) => { const val = e.target.value; setUsername(val); setIsUsernameChecked(false); const validation = validateUsername(val); setUsernameError(validation.isValid ? '' : validation.errorMessage || ''); }} placeholder="아이디 (영문, 숫자만)" required style={{ flex: 1, padding: '12px 12px 12px 44px', borderRadius: '12px', border: usernameError ? '2px solid #e74c3c' : '2px solid rgba(45, 139, 95, 0.2)', fontSize: '14px', boxSizing: 'border-box' }} />
+                            <motion.button type="button" onClick={handleCheckUsername} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} style={{ minWidth: '85px', padding: '12px 16px', height: '46px', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg, #2D8B5F 0%, #3BA474 100%)', color: 'white', fontSize: '13px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>중복확인</motion.button>
+                        </div>
+                        {usernameError && <p style={{ color: '#e74c3c', fontSize: '12px', marginTop: '4px' }}>{usernameError}</p>}
+                    </FormField>
+
+                    <FormField label="비밀번호" icon={<Lock size={20} />}>
+                        <input type="password" value={password} onChange={(e) => { const val = e.target.value; if (val.length <= 16) { setPassword(val); const validation = validatePassword(val); setPasswordError(validation.isValid ? '' : validation.errorMessage || ''); } }} placeholder="8-16자, 영어, 특수문자 1개, 숫자 3개 이상" required maxLength={16} style={{ width: '100%', padding: '12px 12px 12px 44px', borderRadius: '12px', border: passwordError ? '2px solid #e74c3c' : '2px solid rgba(45, 139, 95, 0.2)', fontSize: '14px', boxSizing: 'border-box' }} />
+                        {password && (() => { const strength = getPasswordStrength(password); return (<div style={{ marginTop: '8px', fontSize: '12px' }}><div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}><span style={{ color: strength.hasValidLength ? '#27ae60' : '#e74c3c' }}>✓ 8-16자</span><span style={{ color: strength.hasEnglish ? '#27ae60' : '#e74c3c' }}>✓ 영어 포함</span><span style={{ color: strength.hasSpecialChar ? '#27ae60' : '#e74c3c' }}>✓ 특수문자 1개 이상</span><span style={{ color: strength.hasMinNumbers ? '#27ae60' : '#e74c3c' }}>✓ 숫자 3개 이상</span></div></div>); })()}
+                        {passwordError && <p style={{ color: '#e74c3c', fontSize: '12px', marginTop: '4px' }}>{passwordError}</p>}
+                    </FormField>
+
+                    <FormField label="비밀번호 확인" icon={<Lock size={20} />}>
+                        <input type="password" value={passwordConfirm} onChange={(e) => setPasswordConfirm(e.target.value)} placeholder="비밀번호 확인" required style={{ width: '100%', padding: '12px 12px 12px 44px', borderRadius: '12px', border: '2px solid rgba(45, 139, 95, 0.2)', fontSize: '14px', boxSizing: 'border-box' }} />
+                        {passwordConfirm && password !== passwordConfirm && <p style={{ color: '#e74c3c', fontSize: '12px', marginTop: '4px' }}>비밀번호가 일치하지 않습니다.</p>}
+                    </FormField>
+
+                    <FormField label="이름" icon={<User size={20} />}>
+                        <input type="text" value={name} onChange={(e) => { const val = e.target.value; setName(val); const validation = validateName(val); setNameError(validation.isValid ? '' : validation.errorMessage || ''); }} placeholder="이름 (한글만)" required style={{ width: '100%', padding: '12px 12px 12px 44px', borderRadius: '12px', border: nameError ? '2px solid #e74c3c' : '2px solid rgba(45, 139, 95, 0.2)', fontSize: '14px', boxSizing: 'border-box' }} />
+                        {nameError && <p style={{ color: '#e74c3c', fontSize: '12px', marginTop: '4px' }}>{nameError}</p>}
+                    </FormField>
+
+                    <FormField label="닉네임" icon={<User size={20} />} verified={isNicknameChecked && isNicknameAvailable}>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                            <input type="text" value={nickname} onChange={(e) => { const val = e.target.value; setNickname(val); setIsNicknameChecked(false); const validation = validateNickname(val); setNicknameError(validation.isValid ? '' : validation.errorMessage || ''); }} placeholder="닉네임" required style={{ flex: 1, padding: '12px 12px 12px 44px', borderRadius: '12px', border: nicknameError ? '2px solid #e74c3c' : '2px solid rgba(45, 139, 95, 0.2)', fontSize: '14px', boxSizing: 'border-box' }} />
+                            <motion.button type="button" onClick={handleCheckNickname} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} style={{ minWidth: '85px', padding: '12px 16px', height: '46px', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg, #2D8B5F 0%, #3BA474 100%)', color: 'white', fontSize: '13px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>중복확인</motion.button>
+                        </div>
+                        {nicknameError && <p style={{ color: '#e74c3c', fontSize: '12px', marginTop: '4px' }}>{nicknameError}</p>}
+                    </FormField>
+
+                    <div style={{ marginBottom: '20px' }}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', color: '#2D8B5F', fontSize: '14px', fontWeight: '500' }}>성별</label>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                            <motion.button type="button" onClick={() => setGender('Male')} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: gender === 'Male' ? '2px solid #4A90E2' : '2px solid #ddd', background: gender === 'Male' ? 'linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)' : 'white', color: gender === 'Male' ? 'white' : '#666', fontSize: '14px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.2s' }}>Male</motion.button>
+                            <motion.button type="button" onClick={() => setGender('Female')} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: gender === 'Female' ? '2px solid #E84A5F' : '2px solid #ddd', background: gender === 'Female' ? 'linear-gradient(135deg, #E84A5F 0%, #D63447 100%)' : 'white', color: gender === 'Female' ? 'white' : '#666', fontSize: '14px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.2s' }}>Female</motion.button>
+                        </div>
                     </div>
-                    {usernameError && <p style={{ color: '#e74c3c', fontSize: '12px', marginTop: '4px' }}>{usernameError}</p>}
-                </FormField>
 
-                <FormField label="비밀번호" icon={<Lock size={20} />}>
-                    <input type="password" value={password} onChange={(e) => { const val = e.target.value; if (val.length <= 16) { setPassword(val); const validation = validatePassword(val); setPasswordError(validation.isValid ? '' : validation.errorMessage || ''); } }} placeholder="8-16자, 영어, 특수문자 1개, 숫자 3개 이상" required maxLength={16} style={{ width: '100%', padding: '12px 12px 12px 44px', borderRadius: '12px', border: passwordError ? '2px solid #e74c3c' : '2px solid rgba(45, 139, 95, 0.2)', fontSize: '14px', boxSizing: 'border-box' }} />
-                    {password && (() => { const strength = getPasswordStrength(password); return (<div style={{ marginTop: '8px', fontSize: '12px' }}><div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}><span style={{ color: strength.hasValidLength ? '#27ae60' : '#e74c3c' }}>✓ 8-16자</span><span style={{ color: strength.hasEnglish ? '#27ae60' : '#e74c3c' }}>✓ 영어 포함</span><span style={{ color: strength.hasSpecialChar ? '#27ae60' : '#e74c3c' }}>✓ 특수문자 1개 이상</span><span style={{ color: strength.hasMinNumbers ? '#27ae60' : '#e74c3c' }}>✓ 숫자 3개 이상</span></div></div>); })()}
-                    {passwordError && <p style={{ color: '#e74c3c', fontSize: '12px', marginTop: '4px' }}>{passwordError}</p>}
-                </FormField>
+                    <FormField label="이메일" icon={<Mail size={20} />} verified={isEmailVerified}>
+                        <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="이메일" required disabled={isEmailVerified} style={{ flex: 1, padding: '12px 12px 12px 44px', borderRadius: '12px', border: '2px solid rgba(45, 139, 95, 0.2)', fontSize: '14px', boxSizing: 'border-box', backgroundColor: isEmailVerified ? '#f5f5f5' : 'white' }} />
+                            <motion.button type="button" onClick={handleSendVerificationCode} disabled={isEmailVerified || !email} whileHover={{ scale: isEmailVerified ? 1 : 1.05 }} whileTap={{ scale: isEmailVerified ? 1 : 0.95 }} style={{ minWidth: '85px', padding: '12px 16px', height: '46px', borderRadius: '12px', border: 'none', background: isEmailVerified ? '#ccc' : 'linear-gradient(135deg, #2D8B5F 0%, #3BA474 100%)', color: 'white', fontSize: '13px', fontWeight: '600', cursor: isEmailVerified ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{isCodeSent ? '재전송' : '인증번호'}</motion.button>
+                        </div>
+                        {isCodeSent && !isEmailVerified && (
+                            <>
+                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                    <input type="text" value={verificationCode} onChange={(e) => setVerificationCode(e.target.value)} placeholder="인증번호 6자리" maxLength={6} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '2px solid rgba(45, 139, 95, 0.2)', fontSize: '14px', boxSizing: 'border-box' }} />
+                                    <motion.button type="button" onClick={handleVerifyCode} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} style={{ minWidth: '65px', padding: '12px 16px', height: '46px', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg, #2D8B5F 0%, #3BA474 100%)', color: 'white', fontSize: '13px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>확인</motion.button>
+                                </div>
+                                {timeLeft > 0 && (
+                                    <div style={{ marginTop: '4px', fontSize: '13px', color: '#e74c3c', fontWeight: '600' }}>
+                                        ⏱️ {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}
+                                    </div>
+                                )}
+                                {timeLeft === 0 && (
+                                    <div style={{ marginTop: '4px', fontSize: '13px', color: '#e74c3c', fontWeight: '600' }}>
+                                        ⚠️ 인증시간이 만료되었습니다. 재전송 버튼을 눌러주세요.
+                                    </div>
+                                )}
+                            </>
+                        )}
+                    </FormField>
 
-                <FormField label="비밀번호 확인" icon={<Lock size={20} />}>
-                    <input type="password" value={passwordConfirm} onChange={(e) => setPasswordConfirm(e.target.value)} placeholder="비밀번호 확인" required style={{ width: '100%', padding: '12px 12px 12px 44px', borderRadius: '12px', border: '2px solid rgba(45, 139, 95, 0.2)', fontSize: '14px', boxSizing: 'border-box' }} />
-                    {passwordConfirm && password !== passwordConfirm && <p style={{ color: '#e74c3c', fontSize: '12px', marginTop: '4px' }}>비밀번호가 일치하지 않습니다.</p>}
-                </FormField>
+                    <FormField label="우편번호" icon={<MapPin size={20} />}>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                            <input type="text" value={zipcode} placeholder="우편번호" readOnly required style={{ flex: 1, padding: '12px 12px 12px 44px', borderRadius: '12px', border: '2px solid rgba(45, 139, 95, 0.2)', fontSize: '14px', boxSizing: 'border-box', backgroundColor: '#f8f9fa' }} />
+                            <motion.button type="button" onClick={handleSearchAddress} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} style={{ minWidth: '85px', padding: '12px 16px', height: '46px', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg, #2D8B5F 0%, #3BA474 100%)', color: 'white', fontSize: '13px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>찾기</motion.button>
+                        </div>
+                    </FormField>
 
-                <FormField label="이름" icon={<User size={20} />}>
-                    <input type="text" value={name} onChange={(e) => { const val = e.target.value; setName(val); const validation = validateName(val); setNameError(validation.isValid ? '' : validation.errorMessage || ''); }} placeholder="이름 (한글만)" required style={{ width: '100%', padding: '12px 12px 12px 44px', borderRadius: '12px', border: nameError ? '2px solid #e74c3c' : '2px solid rgba(45, 139, 95, 0.2)', fontSize: '14px', boxSizing: 'border-box' }} />
-                    {nameError && <p style={{ color: '#e74c3c', fontSize: '12px', marginTop: '4px' }}>{nameError}</p>}
-                </FormField>
+                    <FormField label="주소" icon={<MapPin size={20} />}>
+                        <input type="text" value={address} placeholder="주소" readOnly required style={{ width: '100%', padding: '12px 12px 12px 44px', borderRadius: '12px', border: '2px solid rgba(45, 139, 95, 0.2)', fontSize: '14px', boxSizing: 'border-box', backgroundColor: '#f8f9fa' }} />
+                    </FormField>
 
-                <FormField label="닉네임" icon={<User size={20} />} verified={isNicknameChecked && isNicknameAvailable}>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                        <input type="text" value={nickname} onChange={(e) => { const val = e.target.value; setNickname(val); setIsNicknameChecked(false); const validation = validateNickname(val); setNicknameError(validation.isValid ? '' : validation.errorMessage || ''); }} placeholder="닉네임" required style={{ flex: 1, padding: '12px 12px 12px 44px', borderRadius: '12px', border: nicknameError ? '2px solid #e74c3c' : '2px solid rgba(45, 139, 95, 0.2)', fontSize: '14px', boxSizing: 'border-box' }} />
-                        <motion.button type="button" onClick={handleCheckNickname} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} style={{ minWidth: '85px', padding: '12px 16px', height: '46px', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg, #2D8B5F 0%, #3BA474 100%)', color: 'white', fontSize: '13px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>중복확인</motion.button>
+                    <FormField label="상세주소" icon={<MapPin size={20} />}>
+                        <input type="text" value={detailAddress} onChange={(e) => setDetailAddress(e.target.value)} placeholder="상세주소" style={{ width: '100%', padding: '12px 12px 12px 44px', borderRadius: '12px', border: '2px solid rgba(45, 139, 95, 0.2)', fontSize: '14px', boxSizing: 'border-box' }} />
+                    </FormField>
+
+                    <FormField label="생년월일" icon={<Calendar size={20} />}>
+                        <input type="date" value={birthdate} onChange={(e) => setBirthdate(e.target.value)} required style={{ width: '100%', padding: '12px 12px 12px 44px', borderRadius: '12px', border: '2px solid rgba(45, 139, 95, 0.2)', fontSize: '14px', boxSizing: 'border-box' }} />
+                    </FormField>
+
+                    <div style={{ display: 'flex', gap: '12px', marginTop: '24px', marginBottom: '16px' }}>
+                        <motion.button type="button" onClick={onBack} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} style={{ flex: 1, padding: '14px', borderRadius: '12px', border: '2px solid #2D8B5F', background: 'white', color: '#2D8B5F', fontSize: '16px', fontWeight: '600', cursor: 'pointer' }}>돌아가기</motion.button>
+                        <motion.button type="submit" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} style={{ flex: 1, padding: '14px', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg, #2D8B5F 0%, #3BA474 100%)', color: 'white', fontSize: '16px', fontWeight: '600', cursor: 'pointer', boxShadow: '0 4px 12px rgba(45, 139, 95, 0.3)' }}>가입하기</motion.button>
                     </div>
-                    {nicknameError && <p style={{ color: '#e74c3c', fontSize: '12px', marginTop: '4px' }}>{nicknameError}</p>}
-                </FormField>
 
-                <div style={{ marginBottom: '20px' }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', color: '#2D8B5F', fontSize: '14px', fontWeight: '500' }}>성별</label>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                        <motion.button type="button" onClick={() => setGender('Male')} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: gender === 'Male' ? '2px solid #4A90E2' : '2px solid #ddd', background: gender === 'Male' ? 'linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)' : 'white', color: gender === 'Male' ? 'white' : '#666', fontSize: '14px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.2s' }}>Male</motion.button>
-                        <motion.button type="button" onClick={() => setGender('Female')} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: gender === 'Female' ? '2px solid #E84A5F' : '2px solid #ddd', background: gender === 'Female' ? 'linear-gradient(135deg, #E84A5F 0%, #D63447 100%)' : 'white', color: gender === 'Female' ? 'white' : '#666', fontSize: '14px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.2s' }}>Female</motion.button>
+                    <div style={{ textAlign: 'center' }}>
+                        <span style={{ color: '#666', fontSize: '14px' }}>이미 계정이 있으신가요? </span>
+                        <button type="button" onClick={onSwitchToLogin} style={{ background: 'none', border: 'none', color: '#2D8B5F', fontSize: '14px', fontWeight: '600', cursor: 'pointer', textDecoration: 'underline' }}>로그인</button>
                     </div>
-                </div>
+                </form>
+            </motion.div>
 
-                <FormField label="이메일" icon={<Mail size={20} />} verified={isEmailVerified}>
-                    <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
-                        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="이메일" required disabled={isEmailVerified} style={{ flex: 1, padding: '12px 12px 12px 44px', borderRadius: '12px', border: '2px solid rgba(45, 139, 95, 0.2)', fontSize: '14px', boxSizing: 'border-box', backgroundColor: isEmailVerified ? '#f5f5f5' : 'white' }} />
-                        <motion.button type="button" onClick={handleSendVerificationCode} disabled={isEmailVerified || !email} whileHover={{ scale: isEmailVerified ? 1 : 1.05 }} whileTap={{ scale: isEmailVerified ? 1 : 0.95 }} style={{ minWidth: '85px', padding: '12px 16px', height: '46px', borderRadius: '12px', border: 'none', background: isEmailVerified ? '#ccc' : 'linear-gradient(135deg, #2D8B5F 0%, #3BA474 100%)', color: 'white', fontSize: '13px', fontWeight: '600', cursor: isEmailVerified ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{isCodeSent ? '재전송' : '인증번호'}</motion.button>
-                    </div>
-                    {isCodeSent && !isEmailVerified && (
-                        <>
-                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                                <input type="text" value={verificationCode} onChange={(e) => setVerificationCode(e.target.value)} placeholder="인증번호 6자리" maxLength={6} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '2px solid rgba(45, 139, 95, 0.2)', fontSize: '14px', boxSizing: 'border-box' }} />
-                                <motion.button type="button" onClick={handleVerifyCode} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} style={{ minWidth: '65px', padding: '12px 16px', height: '46px', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg, #2D8B5F 0%, #3BA474 100%)', color: 'white', fontSize: '13px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>확인</motion.button>
+            {/* Address Search Modal */}
+            <AnimatePresence>
+                {isAddressModalOpen && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        style={{
+                            position: 'fixed',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                            zIndex: 2000,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: '20px'
+                        }}
+                        onClick={() => setIsAddressModalOpen(false)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            onClick={(e) => e.stopPropagation()}
+                            style={{
+                                width: '100%',
+                                maxWidth: '500px',
+                                height: '600px',
+                                backgroundColor: 'white',
+                                borderRadius: '16px',
+                                overflow: 'hidden',
+                                boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+                                display: 'flex',
+                                flexDirection: 'column'
+                            }}
+                        >
+                            <div style={{
+                                padding: '20px',
+                                borderBottom: '1px solid #eee',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                backgroundColor: '#2D8B5F'
+                            }}>
+                                <h3 style={{ color: 'white', fontSize: '18px', fontWeight: '600', margin: 0 }}>주소 검색</h3>
+                                <button
+                                    onClick={() => setIsAddressModalOpen(false)}
+                                    style={{
+                                        width: '32px',
+                                        height: '32px',
+                                        borderRadius: '50%',
+                                        border: 'none',
+                                        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                                        color: 'white',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center'
+                                    }}
+                                >
+                                    <X size={20} />
+                                </button>
                             </div>
-                            {timeLeft > 0 && (
-                                <div style={{ marginTop: '4px', fontSize: '13px', color: '#e74c3c', fontWeight: '600' }}>
-                                    ⏱️ {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}
-                                </div>
-                            )}
-                            {timeLeft === 0 && (
-                                <div style={{ marginTop: '4px', fontSize: '13px', color: '#e74c3c', fontWeight: '600' }}>
-                                    ⚠️ 인증시간이 만료되었습니다. 재전송 버튼을 눌러주세요.
-                                </div>
-                            )}
-                        </>
-                    )}
-                </FormField>
-
-                <FormField label="우편번호" icon={<MapPin size={20} />}>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                        <input type="text" value={zipcode} placeholder="우편번호" readOnly required style={{ flex: 1, padding: '12px 12px 12px 44px', borderRadius: '12px', border: '2px solid rgba(45, 139, 95, 0.2)', fontSize: '14px', boxSizing: 'border-box', backgroundColor: '#f8f9fa' }} />
-                        <motion.button type="button" onClick={handleSearchAddress} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} style={{ minWidth: '85px', padding: '12px 16px', height: '46px', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg, #2D8B5F 0%, #3BA474 100%)', color: 'white', fontSize: '13px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>찾기</motion.button>
-                    </div>
-                </FormField>
-
-                <FormField label="주소" icon={<MapPin size={20} />}>
-                    <input type="text" value={address} placeholder="주소" readOnly required style={{ width: '100%', padding: '12px 12px 12px 44px', borderRadius: '12px', border: '2px solid rgba(45, 139, 95, 0.2)', fontSize: '14px', boxSizing: 'border-box', backgroundColor: '#f8f9fa' }} />
-                </FormField>
-
-                <FormField label="상세주소" icon={<MapPin size={20} />}>
-                    <input type="text" value={detailAddress} onChange={(e) => setDetailAddress(e.target.value)} placeholder="상세주소" style={{ width: '100%', padding: '12px 12px 12px 44px', borderRadius: '12px', border: '2px solid rgba(45, 139, 95, 0.2)', fontSize: '14px', boxSizing: 'border-box' }} />
-                </FormField>
-
-                <FormField label="생년월일" icon={<Calendar size={20} />}>
-                    <input type="date" value={birthdate} onChange={(e) => setBirthdate(e.target.value)} required style={{ width: '100%', padding: '12px 12px 12px 44px', borderRadius: '12px', border: '2px solid rgba(45, 139, 95, 0.2)', fontSize: '14px', boxSizing: 'border-box' }} />
-                </FormField>
-
-                <div style={{ display: 'flex', gap: '12px', marginTop: '24px', marginBottom: '16px' }}>
-                    <motion.button type="button" onClick={onBack} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} style={{ flex: 1, padding: '14px', borderRadius: '12px', border: '2px solid #2D8B5F', background: 'white', color: '#2D8B5F', fontSize: '16px', fontWeight: '600', cursor: 'pointer' }}>돌아가기</motion.button>
-                    <motion.button type="submit" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} style={{ flex: 1, padding: '14px', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg, #2D8B5F 0%, #3BA474 100%)', color: 'white', fontSize: '16px', fontWeight: '600', cursor: 'pointer', boxShadow: '0 4px 12px rgba(45, 139, 95, 0.3)' }}>가입하기</motion.button>
-                </div>
-
-                <div style={{ textAlign: 'center' }}>
-                    <span style={{ color: '#666', fontSize: '14px' }}>이미 계정이 있으신가요? </span>
-                    <button type="button" onClick={onSwitchToLogin} style={{ background: 'none', border: 'none', color: '#2D8B5F', fontSize: '14px', fontWeight: '600', cursor: 'pointer', textDecoration: 'underline' }}>로그인</button>
-                </div>
-            </form>
-        </motion.div>
+                            <div id="daum-postcode-container" style={{ flex: 1, width: '100%' }}></div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </>
     );
 }
 

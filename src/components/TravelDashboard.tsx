@@ -975,6 +975,10 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
                             setIsMapOpen(false);
                             setSelectedLocation(null);
                         }}
+                        onBack={() => {
+                            setIsMapOpen(false);
+                            setIsChatBotOpen(true);
+                        }}
                         tripData={{
                             destination: selectedLocation?.name || tripData?.region || '',
                             participants: tripData?.participants || 1,

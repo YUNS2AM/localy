@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { FileText, Send, MapPin } from 'lucide-react';
+import { ArrowLeft, Send, MapPin } from 'lucide-react';
 import catImage from '../assets/cat.jpg';
 
 interface TravelChatBotProps {
@@ -229,374 +229,393 @@ export function TravelChatBot({ onClose, onComplete, onMapSelect }: TravelChatBo
                 left: 0,
                 right: 0,
                 bottom: 0,
-                backgroundColor: '#FFF5E6',
+                backgroundColor: 'rgba(0, 0, 0, 0.5)',
                 zIndex: 4000,
                 display: 'flex',
-                flexDirection: 'column',
-                overflow: 'hidden'
+                justifyContent: 'center',
+                alignItems: 'center',
+                padding: '20px'
             }}
         >
-            {/* 노트 아이콘 - 우측 상단 */}
-            <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={onClose}
-                style={{
-                    position: 'absolute',
-                    top: '20px',
-                    right: '20px',
-                    width: '48px',
-                    height: '48px',
-                    borderRadius: '50%',
-                    border: 'none',
-                    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-                    backdropFilter: 'blur(10px)',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    zIndex: 100,
-                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
-                }}
-            >
-                <FileText size={24} color="#8B6914" />
-            </motion.button>
-
-            {/* 고양이 이미지 영역 */}
             <motion.div
-                initial={{ y: -30, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.6 }}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
                 style={{
-                    padding: '0',
-                    textAlign: 'center',
-                    background: 'transparent'
+                    width: '100%',
+                    maxWidth: '480px',
+                    height: '100%',
+                    backgroundColor: '#FFF5E6',
+                    borderRadius: '16px',
+                    boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    overflow: 'hidden',
+                    position: 'relative'
                 }}
             >
-                <motion.img
-                    src={catImage}
-                    alt="Travel Cat"
-                    animate={{
-                        y: [0, -5, 0],
-                    }}
-                    transition={{
-                        duration: 2,
-                        repeat: Infinity,
-                        ease: "easeInOut"
-                    }}
+                {/* 뒤로가기 버튼 - 좌측 상단 */}
+                <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={onClose}
                     style={{
-                        width: '100%',
-                        height: '280px',
-                        objectFit: 'cover',
-                        objectPosition: 'center',
-                        display: 'block'
+                        position: 'absolute',
+                        top: '20px',
+                        left: '20px',
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '50%',
+                        border: 'none',
+                        backgroundColor: 'rgba(255, 255, 255, 0.3)',
+                        backdropFilter: 'blur(10px)',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 100,
+                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
                     }}
-                />
-            </motion.div>
+                >
+                    <ArrowLeft size={24} color="#333" />
+                </motion.button>
 
-            {/* 채팅 영역 */}
-            <div style={{
-                flex: 1,
-                overflowY: 'auto',
-                padding: '20px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '12px',
-                background: 'rgba(255, 255, 255, 0.5)',
-                borderTopLeftRadius: '30px',
-                borderTopRightRadius: '30px'
-            }}>
+                {/* 고양이 이미지 영역 */}
+                <motion.div
+                    initial={{ y: -30, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ duration: 0.6 }}
+                    style={{
+                        padding: '0',
+                        textAlign: 'center',
+                        background: 'transparent'
+                    }}
+                >
+                    <motion.img
+                        src={catImage}
+                        alt="Travel Cat"
+                        animate={{
+                            y: [0, -5, 0],
+                        }}
+                        transition={{
+                            duration: 2,
+                            repeat: Infinity,
+                            ease: "easeInOut"
+                        }}
+                        style={{
+                            width: '100%',
+                            height: '280px',
+                            objectFit: 'cover',
+                            objectPosition: 'center',
+                            display: 'block'
+                        }}
+                    />
+                </motion.div>
+
+                {/* 채팅 영역 */}
+                <div style={{
+                    flex: 1,
+                    overflowY: 'auto',
+                    padding: '20px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '12px',
+                    background: 'rgba(255, 255, 255, 0.5)',
+                    borderTopLeftRadius: '30px',
+                    borderTopRightRadius: '30px'
+                }}>
+                    <AnimatePresence>
+                        {messages.map((message, index) => (
+                            <motion.div
+                                key={index}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.3 }}
+                                style={{
+                                    alignSelf: message.type === 'cat' ? 'flex-start' : 'flex-end',
+                                    maxWidth: '80%'
+                                }}
+                            >
+                                <div style={{
+                                    padding: '12px 16px',
+                                    borderRadius: message.type === 'cat' ? '4px 16px 16px 16px' : '16px 4px 16px 16px',
+                                    backgroundColor: message.type === 'cat' ? 'white' : '#2D8B5F',
+                                    color: message.type === 'cat' ? '#333' : 'white',
+                                    fontSize: '14px',
+                                    lineHeight: '1.5',
+                                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+                                    whiteSpace: 'pre-wrap'
+                                }}>
+                                    {message.content}
+                                </div>
+                            </motion.div>
+                        ))}
+                    </AnimatePresence>
+                    <div ref={messagesEndRef} />
+                </div>
+
+                {/* 지도 미리보기 */}
                 <AnimatePresence>
-                    {messages.map((message, index) => (
+                    {selectedDestination && (
                         <motion.div
-                            key={index}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.3 }}
+                            initial={{ y: '100%' }}
+                            animate={{ y: 0 }}
+                            exit={{ y: '100%' }}
+                            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
                             style={{
-                                alignSelf: message.type === 'cat' ? 'flex-start' : 'flex-end',
-                                maxWidth: '80%'
+                                position: 'absolute',
+                                bottom: 80,
+                                left: 0,
+                                right: 0,
+                                height: '400px',
+                                backgroundColor: 'white',
+                                borderTopLeftRadius: '20px',
+                                borderTopRightRadius: '20px',
+                                boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.15)',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                zIndex: 200
                             }}
                         >
+                            {/* 헤더 */}
                             <div style={{
-                                padding: '12px 16px',
-                                borderRadius: message.type === 'cat' ? '4px 16px 16px 16px' : '16px 4px 16px 16px',
-                                backgroundColor: message.type === 'cat' ? 'white' : '#2D8B5F',
-                                color: message.type === 'cat' ? '#333' : 'white',
-                                fontSize: '14px',
-                                lineHeight: '1.5',
-                                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-                                whiteSpace: 'pre-wrap'
+                                padding: '16px 20px',
+                                borderBottom: '1px solid #eee'
                             }}>
-                                {message.content}
+                                <h3 style={{ margin: 0, fontSize: '17px', fontWeight: '700', color: '#333', marginBottom: '4px' }}>
+                                    {selectedDestination.name}
+                                </h3>
+                                <p style={{ margin: 0, fontSize: '13px', color: '#666' }}>
+                                    {selectedDestination.address}
+                                </p>
+                            </div>
+
+                            {/* 지도 */}
+                            <div style={{ flex: 1, padding: '12px' }}>
+                                <iframe
+                                    src={`https://www.google.com/maps?q=${selectedDestination.lat},${selectedDestination.lng}&hl=ko&z=14&output=embed`}
+                                    style={{
+                                        width: '100%',
+                                        height: '100%',
+                                        border: 'none',
+                                        borderRadius: '12px'
+                                    }}
+                                />
+                            </div>
+
+                            {/* 버튼들 */}
+                            <div style={{
+                                padding: '12px 16px 16px',
+                                display: 'flex',
+                                gap: '10px'
+                            }}>
+                                <motion.button
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                    onClick={() => setSelectedDestination(null)}
+                                    style={{
+                                        flex: 1,
+                                        padding: '14px',
+                                        borderRadius: '12px',
+                                        border: '2px solid #e0e0e0',
+                                        backgroundColor: 'white',
+                                        cursor: 'pointer',
+                                        fontSize: '15px',
+                                        fontWeight: '600',
+                                        color: '#666'
+                                    }}
+                                >
+                                    닫기
+                                </motion.button>
+                                <motion.button
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                    onClick={() => {
+                                        // 여행 데이터 완성 및 전달 (실제 선택한 여행지 이름 포함)
+                                        if (travelData.participants && travelData.startDate && travelData.endDate && travelData.region) {
+                                            onComplete({
+                                                participants: travelData.participants,
+                                                startDate: travelData.startDate,
+                                                endDate: travelData.endDate,
+                                                region: travelData.region,
+                                                placeName: selectedDestination.name  // 실제 선택한 장소 이름
+                                            });
+                                        }
+
+                                        if (onMapSelect) {
+                                            onMapSelect({
+                                                lat: selectedDestination.lat,
+                                                lng: selectedDestination.lng,
+                                                name: selectedDestination.name
+                                            });
+                                        }
+                                    }}
+                                    style={{
+                                        flex: 1,
+                                        padding: '14px',
+                                        borderRadius: '12px',
+                                        border: 'none',
+                                        background: 'linear-gradient(135deg, #2D8B5F 0%, #3BA474 100%)',
+                                        color: 'white',
+                                        cursor: 'pointer',
+                                        fontSize: '15px',
+                                        fontWeight: '600',
+                                        boxShadow: '0 2px 8px rgba(45, 139, 95, 0.3)'
+                                    }}
+                                >
+                                    선택
+                                </motion.button>
                             </div>
                         </motion.div>
-                    ))}
+                    )}
                 </AnimatePresence>
-                <div ref={messagesEndRef} />
-            </div>
 
-            {/* 지도 미리보기 */}
-            <AnimatePresence>
-                {selectedDestination && (
-                    <motion.div
-                        initial={{ y: '100%' }}
-                        animate={{ y: 0 }}
-                        exit={{ y: '100%' }}
-                        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                        style={{
-                            position: 'absolute',
-                            bottom: 80,
-                            left: 0,
-                            right: 0,
-                            height: '400px',
-                            backgroundColor: 'white',
-                            borderTopLeftRadius: '20px',
-                            borderTopRightRadius: '20px',
-                            boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.15)',
+                {/* 입력 필드 / 날짜 선택 UI */}
+                <div style={{
+                    padding: '16px 20px',
+                    backgroundColor: 'white',
+                    borderTop: '1px solid #eee'
+                }}>
+                    {step === 'dates' ? (
+                        // 날짜 선택 UI
+                        <div style={{
                             display: 'flex',
                             flexDirection: 'column',
-                            zIndex: 200
-                        }}
-                    >
-                        {/* 헤더 */}
-                        <div style={{
-                            padding: '16px 20px',
-                            borderBottom: '1px solid #eee'
+                            gap: '16px'
                         }}>
-                            <h3 style={{ margin: 0, fontSize: '17px', fontWeight: '700', color: '#333', marginBottom: '4px' }}>
-                                {selectedDestination.name}
-                            </h3>
-                            <p style={{ margin: 0, fontSize: '13px', color: '#666' }}>
-                                {selectedDestination.address}
-                            </p>
-                        </div>
+                            <div style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '12px'
+                            }}>
+                                {/* 시작일 */}
+                                <div>
+                                    <label style={{
+                                        display: 'block',
+                                        marginBottom: '8px',
+                                        fontSize: '13px',
+                                        fontWeight: '600',
+                                        color: '#666'
+                                    }}>
+                                        시작일
+                                    </label>
+                                    <input
+                                        type="date"
+                                        value={startDate}
+                                        onChange={(e) => setStartDate(e.target.value)}
+                                        min={new Date().toISOString().split('T')[0]}
+                                        style={{
+                                            width: '100%',
+                                            padding: '12px 16px',
+                                            borderRadius: '12px',
+                                            border: '2px solid #eee',
+                                            fontSize: '14px',
+                                            outline: 'none',
+                                            fontFamily: 'inherit',
+                                            cursor: 'pointer'
+                                        }}
+                                    />
+                                </div>
 
-                        {/* 지도 */}
-                        <div style={{ flex: 1, padding: '12px' }}>
-                            <iframe
-                                src={`https://www.google.com/maps?q=${selectedDestination.lat},${selectedDestination.lng}&hl=ko&z=14&output=embed`}
+                                {/* 종료일 */}
+                                <div>
+                                    <label style={{
+                                        display: 'block',
+                                        marginBottom: '8px',
+                                        fontSize: '13px',
+                                        fontWeight: '600',
+                                        color: '#666'
+                                    }}>
+                                        종료일
+                                    </label>
+                                    <input
+                                        type="date"
+                                        value={endDate}
+                                        onChange={(e) => setEndDate(e.target.value)}
+                                        min={startDate || new Date().toISOString().split('T')[0]}
+                                        style={{
+                                            width: '100%',
+                                            padding: '12px 16px',
+                                            borderRadius: '12px',
+                                            border: '2px solid #eee',
+                                            fontSize: '14px',
+                                            outline: 'none',
+                                            fontFamily: 'inherit',
+                                            cursor: 'pointer'
+                                        }}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* 확인 버튼 */}
+                            <motion.button
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                onClick={handleDateConfirm}
+                                disabled={!startDate || !endDate}
                                 style={{
                                     width: '100%',
-                                    height: '100%',
+                                    padding: '14px',
+                                    borderRadius: '12px',
                                     border: 'none',
-                                    borderRadius: '12px'
+                                    background: startDate && endDate
+                                        ? 'linear-gradient(135deg, #2D8B5F 0%, #3BA474 100%)'
+                                        : '#e0e0e0',
+                                    color: 'white',
+                                    fontSize: '15px',
+                                    fontWeight: '600',
+                                    cursor: startDate && endDate ? 'pointer' : 'not-allowed',
+                                    boxShadow: startDate && endDate ? '0 2px 8px rgba(45, 139, 95, 0.3)' : 'none'
+                                }}
+                            >
+                                날짜 확인
+                            </motion.button>
+                        </div>
+                    ) : (
+                        // 일반 텍스트 입력 UI
+                        <div style={{
+                            display: 'flex',
+                            gap: '12px',
+                            alignItems: 'center'
+                        }}>
+                            <input
+                                type="text"
+                                value={input}
+                                onChange={(e) => setInput(e.target.value)}
+                                onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+                                placeholder="메시지를 입력하세요..."
+                                style={{
+                                    flex: 1,
+                                    padding: '12px 16px',
+                                    borderRadius: '24px',
+                                    border: '2px solid #eee',
+                                    fontSize: '14px',
+                                    outline: 'none',
+                                    fontFamily: 'inherit'
                                 }}
                             />
-                        </div>
-
-                        {/* 버튼들 */}
-                        <div style={{
-                            padding: '12px 16px 16px',
-                            display: 'flex',
-                            gap: '10px'
-                        }}>
                             <motion.button
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                                onClick={() => setSelectedDestination(null)}
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={handleSend}
                                 style={{
-                                    flex: 1,
-                                    padding: '14px',
-                                    borderRadius: '12px',
-                                    border: '2px solid #e0e0e0',
-                                    backgroundColor: 'white',
-                                    cursor: 'pointer',
-                                    fontSize: '15px',
-                                    fontWeight: '600',
-                                    color: '#666'
-                                }}
-                            >
-                                닫기
-                            </motion.button>
-                            <motion.button
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                                onClick={() => {
-                                    // 여행 데이터 완성 및 전달 (실제 선택한 여행지 이름 포함)
-                                    if (travelData.participants && travelData.startDate && travelData.endDate && travelData.region) {
-                                        onComplete({
-                                            participants: travelData.participants,
-                                            startDate: travelData.startDate,
-                                            endDate: travelData.endDate,
-                                            region: travelData.region,
-                                            placeName: selectedDestination.name  // 실제 선택한 장소 이름
-                                        });
-                                    }
-
-                                    if (onMapSelect) {
-                                        onMapSelect({
-                                            lat: selectedDestination.lat,
-                                            lng: selectedDestination.lng,
-                                            name: selectedDestination.name
-                                        });
-                                    }
-                                }}
-                                style={{
-                                    flex: 1,
-                                    padding: '14px',
-                                    borderRadius: '12px',
+                                    width: '48px',
+                                    height: '48px',
+                                    borderRadius: '50%',
                                     border: 'none',
-                                    background: 'linear-gradient(135deg, #2D8B5F 0%, #3BA474 100%)',
-                                    color: 'white',
+                                    backgroundColor: '#2D8B5F',
                                     cursor: 'pointer',
-                                    fontSize: '15px',
-                                    fontWeight: '600',
-                                    boxShadow: '0 2px 8px rgba(45, 139, 95, 0.3)'
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
                                 }}
                             >
-                                선택
+                                <Send size={20} color="white" />
                             </motion.button>
                         </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            {/* 입력 필드 / 날짜 선택 UI */}
-            <div style={{
-                padding: '16px 20px',
-                backgroundColor: 'white',
-                borderTop: '1px solid #eee'
-            }}>
-                {step === 'dates' ? (
-                    // 날짜 선택 UI
-                    <div style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '16px'
-                    }}>
-                        <div style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '12px'
-                        }}>
-                            {/* 시작일 */}
-                            <div>
-                                <label style={{
-                                    display: 'block',
-                                    marginBottom: '8px',
-                                    fontSize: '13px',
-                                    fontWeight: '600',
-                                    color: '#666'
-                                }}>
-                                    시작일
-                                </label>
-                                <input
-                                    type="date"
-                                    value={startDate}
-                                    onChange={(e) => setStartDate(e.target.value)}
-                                    min={new Date().toISOString().split('T')[0]}
-                                    style={{
-                                        width: '100%',
-                                        padding: '12px 16px',
-                                        borderRadius: '12px',
-                                        border: '2px solid #eee',
-                                        fontSize: '14px',
-                                        outline: 'none',
-                                        fontFamily: 'inherit',
-                                        cursor: 'pointer'
-                                    }}
-                                />
-                            </div>
-
-                            {/* 종료일 */}
-                            <div>
-                                <label style={{
-                                    display: 'block',
-                                    marginBottom: '8px',
-                                    fontSize: '13px',
-                                    fontWeight: '600',
-                                    color: '#666'
-                                }}>
-                                    종료일
-                                </label>
-                                <input
-                                    type="date"
-                                    value={endDate}
-                                    onChange={(e) => setEndDate(e.target.value)}
-                                    min={startDate || new Date().toISOString().split('T')[0]}
-                                    style={{
-                                        width: '100%',
-                                        padding: '12px 16px',
-                                        borderRadius: '12px',
-                                        border: '2px solid #eee',
-                                        fontSize: '14px',
-                                        outline: 'none',
-                                        fontFamily: 'inherit',
-                                        cursor: 'pointer'
-                                    }}
-                                />
-                            </div>
-                        </div>
-
-                        {/* 확인 버튼 */}
-                        <motion.button
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            onClick={handleDateConfirm}
-                            disabled={!startDate || !endDate}
-                            style={{
-                                width: '100%',
-                                padding: '14px',
-                                borderRadius: '12px',
-                                border: 'none',
-                                background: startDate && endDate
-                                    ? 'linear-gradient(135deg, #2D8B5F 0%, #3BA474 100%)'
-                                    : '#e0e0e0',
-                                color: 'white',
-                                fontSize: '15px',
-                                fontWeight: '600',
-                                cursor: startDate && endDate ? 'pointer' : 'not-allowed',
-                                boxShadow: startDate && endDate ? '0 2px 8px rgba(45, 139, 95, 0.3)' : 'none'
-                            }}
-                        >
-                            날짜 확인
-                        </motion.button>
-                    </div>
-                ) : (
-                    // 일반 텍스트 입력 UI
-                    <div style={{
-                        display: 'flex',
-                        gap: '12px',
-                        alignItems: 'center'
-                    }}>
-                        <input
-                            type="text"
-                            value={input}
-                            onChange={(e) => setInput(e.target.value)}
-                            onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-                            placeholder="메시지를 입력하세요..."
-                            style={{
-                                flex: 1,
-                                padding: '12px 16px',
-                                borderRadius: '24px',
-                                border: '2px solid #eee',
-                                fontSize: '14px',
-                                outline: 'none',
-                                fontFamily: 'inherit'
-                            }}
-                        />
-                        <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={handleSend}
-                            style={{
-                                width: '48px',
-                                height: '48px',
-                                borderRadius: '50%',
-                                border: 'none',
-                                backgroundColor: '#2D8B5F',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center'
-                            }}
-                        >
-                            <Send size={20} color="white" />
-                        </motion.button>
-                    </div>
-                )}
-            </div>
+                    )}
+                </div>
+            </motion.div>
         </motion.div>
     );
 }
