@@ -14,6 +14,7 @@ interface MapScreenProps {
     onBack?: () => void;
     initialLocation?: { lat: number; lng: number; name: string } | null;
     onScheduleSave?: (travel: any) => void;
+    onSelect?: (location: any) => void;
 }
 
 type CategoryType = 'lodging' | 'restaurant' | 'tourist_attraction' | 'cafe' | 'shopping_mall';
@@ -33,7 +34,7 @@ const categories: Category[] = [
     { id: 'shopping_mall', label: '쇼핑', icon: ShoppingBag, color: '#fa709a' }
 ];
 
-export function MapScreen({ tripData, onClose, onBack, initialLocation, onScheduleSave }: MapScreenProps) {
+export function MapScreen({ tripData, onClose, onBack, initialLocation, onScheduleSave, onSelect }: MapScreenProps) {
     const mapRef = useRef<HTMLDivElement>(null);
     const mapInstanceRef = useRef<google.maps.Map | null>(null);
     const streetViewRef = useRef<HTMLDivElement>(null);

@@ -7,6 +7,8 @@ import { PasswordEditScreen } from './PasswordEditScreen';
 import { PersonalInfoEditScreen } from './PersonalInfoEditScreen';
 import { PersonaEditScreen } from './PersonaEditScreen';
 import { useState } from 'react';
+import { FloatingActionButton } from './FloatingActionButton';
+import { TravelScheduleEditor } from './TravelScheduleEditor';
 
 const myUrl = window.location.protocol + "//" + window.location.hostname + ":8000";
 
@@ -59,6 +61,7 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
     const [tripData, setTripData] = useState<{ participants: number; startDate: string; endDate: string; region: string } | null>(null);
     const [selectedTravel, setSelectedTravel] = useState<TravelItem | null>(null);
     const [isDetailViewOpen, setIsDetailViewOpen] = useState(false);
+    const [isScheduleEditorOpen, setIsScheduleEditorOpen] = useState(false);
 
     // 현재 로그인한 사용자 ID 가져오기
     const getUserId = () => {
@@ -102,6 +105,31 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
 
         // 저장 후 맵 닫기
         setIsMapOpen(false);
+    };
+
+
+    // 직접 추가하기 핸들러 (새로 추가)
+    const handleManualAdd = () => {
+        setIsScheduleEditorOpen(true);
+    };
+
+    const handleNewTravelSave = (travelData: any) => {
+        const newTravel: TravelItem = {
+            id: Date.now(),
+            title: travelData.title,
+            destination: travelData.destination,
+            startDate: travelData.startDate,
+            endDate: travelData.endDate,
+            participants: travelData.participants,
+            image: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)', // Default gradient
+            places: travelData.places
+        };
+
+        const userId = getUserId();
+        const updatedTravels = [...travels, newTravel];
+        setTravels(updatedTravels);
+        localStorage.setItem(`travels_${userId}`, JSON.stringify(updatedTravels));
+        setIsScheduleEditorOpen(false);
     };
 
     // 일정 삭제 핸들러
@@ -308,31 +336,30 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
                     style={{
                         display: 'flex',
                         justifyContent: 'center',
-                        marginBottom: '40px'
+                        marginBottom: '40px',
+                        // 버튼이 펼쳐질 공간 확보를 위해 zIndex와 position 설정이 필요할 수 있습니다.
+                        position: 'relative',
+                        zIndex: 50
                     }}
                 >
-                    <motion.button
+                    {/* ▼▼▼▼▼ 기존 버튼 삭제 ▼▼▼▼▼ */}
+                    {/* <motion.button
                         whileHover={{ scale: 1.05, boxShadow: '0 8px 24px rgba(45, 139, 95, 0.3)' }}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => setIsChatBotOpen(true)}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '10px',
-                            padding: '16px 32px',
-                            borderRadius: '50px',
-                            border: 'none',
-                            background: 'linear-gradient(135deg, #2D8B5F 0%, #3BA474 100%)',
-                            color: 'white',
-                            fontSize: '18px',
-                            fontWeight: '600',
-                            cursor: 'pointer',
-                            boxShadow: '0 4px 12px rgba(45, 139, 95, 0.3)'
-                        }}
+                        style={{ ... }}
                     >
                         <Plus size={24} strokeWidth={3} />
                         새 여행 추가하기
-                    </motion.button>
+                    </motion.button> */}
+                    {/* ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲ */}
+
+                    {/* ▼▼▼▼▼ 새 컴포넌트 추가 ▼▼▼▼▼ */}
+                    <FloatingActionButton
+                        onAIClick={() => setIsChatBotOpen(true)} // AI 버튼 클릭 시 챗봇 열기
+                        onMapClick={handleManualAdd}             // 지도 버튼 클릭 시 지도 열기
+                    />
+                    {/* ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲ */}
                 </motion.div>
 
                 {/* Travel List */}
@@ -412,6 +439,16 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
                             setSelectedLocation(location);
                             setIsMapOpen(true);
                         }}
+                    />
+                )}
+            </AnimatePresence>
+
+            {/* Schedule Editor */}
+            <AnimatePresence>
+                {isScheduleEditorOpen && (
+                    <TravelScheduleEditor
+                        onClose={() => setIsScheduleEditorOpen(false)}
+                        onComplete={handleNewTravelSave}
                     />
                 )}
             </AnimatePresence>
@@ -791,8 +828,8 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
                                     padding: '16px',
                                     borderRadius: '12px',
                                     border: 'none',
-                                    backgroundColor: '#f0f0f0',
-                                    color: '#333',
+                                    backgroundColor: '#FFEBEE',
+                                    color: '#E84A5F',
                                     fontSize: '15px',
                                     fontWeight: '600',
                                     cursor: 'pointer',
@@ -803,242 +840,198 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
                             </motion.button>
 
                             {/* 회원탈퇴 버튼 */}
-                            <motion.button
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
+                            <button
                                 onClick={handleWithdraw}
                                 style={{
                                     width: '100%',
-                                    padding: '16px',
-                                    borderRadius: '12px',
+                                    padding: '12px',
                                     border: 'none',
-                                    backgroundColor: '#FFE5E5',
-                                    color: '#E84A5F',
-                                    fontSize: '15px',
-                                    fontWeight: '600',
+                                    backgroundColor: 'transparent',
+                                    color: '#999',
+                                    fontSize: '13px',
+                                    textDecoration: 'underline',
                                     cursor: 'pointer'
                                 }}
                             >
                                 회원탈퇴
-                            </motion.button>
+                            </button>
                         </div>
                     </motion.div>
                 )}
             </AnimatePresence>
 
-
-            {/* Account Management Panel */}
+            {/* Account Management Modal */}
             <AnimatePresence>
                 {isAccountManagementOpen && (
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        transition={{ duration: 0.3 }}
                         style={{
                             position: 'fixed',
                             top: 0,
                             left: 0,
                             right: 0,
                             bottom: 0,
-                            backgroundColor: 'white',
-                            zIndex: 1100,
+                            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                            zIndex: 2000,
                             display: 'flex',
-                            flexDirection: 'column'
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            padding: '20px'
                         }}
+                        onClick={() => setIsAccountManagementOpen(false)}
                     >
-                        <div style={{
-                            padding: '20px 30px',
-                            borderBottom: '1px solid #eee',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center'
-                        }}>
-                            <h2 style={{
-                                fontSize: '24px',
-                                fontWeight: 'bold',
-                                color: '#2D8B5F',
-                                margin: 0
-                            }}>
+                        <motion.div
+                            initial={{ scale: 0.9, y: 20 }}
+                            animate={{ scale: 1, y: 0 }}
+                            exit={{ scale: 0.9, y: 20 }}
+                            style={{
+                                width: '100%',
+                                maxWidth: '320px',
+                                backgroundColor: 'white',
+                                borderRadius: '20px',
+                                padding: '24px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '12px'
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <h3 style={{ margin: '0 0 12px 0', fontSize: '18px', fontWeight: 'bold', textAlign: 'center' }}>
                                 계정 관리
-                            </h2>
+                            </h3>
+
                             <motion.button
-                                whileHover={{ scale: 1.1 }}
-                                whileTap={{ scale: 0.95 }}
-                                onClick={() => setIsAccountManagementOpen(false)}
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                onClick={() => {
+                                    setIsAccountManagementOpen(false);
+                                    setIsPasswordEditOpen(true);
+                                }}
                                 style={{
-                                    width: '40px',
-                                    height: '40px',
-                                    borderRadius: '50%',
-                                    border: 'none',
-                                    backgroundColor: '#f8f9fa',
+                                    padding: '16px',
+                                    borderRadius: '12px',
+                                    border: '1px solid #eee',
+                                    backgroundColor: 'white',
+                                    fontSize: '15px',
+                                    color: '#333',
                                     cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center'
+                                    textAlign: 'left'
                                 }}
                             >
-                                <X size={20} color="#666" />
+                                비밀번호 변경
                             </motion.button>
-                        </div>
 
-                        <div style={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
-                            <div style={{
-                                backgroundColor: 'white',
-                                borderRadius: '12px',
-                                overflow: 'hidden'
-                            }}>
-                                {/* 비밀번호 수정 */}
-                                <button
-                                    onClick={() => {
-                                        setIsAccountManagementOpen(false);
-                                        setIsPasswordEditOpen(true);
-                                    }}
-                                    style={{
-                                        width: '100%',
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
-                                        alignItems: 'center',
-                                        padding: '16px 20px',
-                                        border: 'none',
-                                        borderBottom: '1px solid #f0f0f0',
-                                        backgroundColor: 'transparent',
-                                        cursor: 'pointer',
-                                        fontSize: '15px',
-                                        color: '#333',
-                                        textAlign: 'left'
-                                    }}
-                                >
-                                    비밀번호 수정
-                                    <span style={{ color: '#ccc' }}>›</span>
-                                </button>
+                            <motion.button
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                onClick={() => {
+                                    setIsAccountManagementOpen(false);
+                                    setIsPersonalInfoEditOpen(true);
+                                }}
+                                style={{
+                                    padding: '16px',
+                                    borderRadius: '12px',
+                                    border: '1px solid #eee',
+                                    backgroundColor: 'white',
+                                    fontSize: '15px',
+                                    color: '#333',
+                                    cursor: 'pointer',
+                                    textAlign: 'left'
+                                }}
+                            >
+                                개인정보 수정
+                            </motion.button>
 
-                                {/* 개인정보 수정 */}
-                                <button
-                                    onClick={() => {
-                                        setIsAccountManagementOpen(false);
-                                        setIsPersonalInfoEditOpen(true);
-                                    }}
-                                    style={{
-                                        width: '100%',
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
-                                        alignItems: 'center',
-                                        padding: '16px 20px',
-                                        border: 'none',
-                                        borderBottom: '1px solid #f0f0f0',
-                                        backgroundColor: 'transparent',
-                                        cursor: 'pointer',
-                                        fontSize: '15px',
-                                        color: '#333',
-                                        textAlign: 'left'
-                                    }}
-                                >
-                                    개인정보 수정
-                                    <span style={{ color: '#ccc' }}>›</span>
-                                </button>
+                            <motion.button
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                onClick={() => {
+                                    setIsAccountManagementOpen(false);
+                                    setIsPersonaEditOpen(true);
+                                }}
+                                style={{
+                                    padding: '16px',
+                                    borderRadius: '12px',
+                                    border: '1px solid #eee',
+                                    backgroundColor: 'white',
+                                    fontSize: '15px',
+                                    color: '#333',
+                                    cursor: 'pointer',
+                                    textAlign: 'left'
+                                }}
+                            >
+                                페르소나 수정
+                            </motion.button>
 
-                                {/* 페르소나 수정 */}
-                                <button
-                                    onClick={() => {
-                                        setIsAccountManagementOpen(false);
-                                        setIsPersonaEditOpen(true);
-                                    }}
-                                    style={{
-                                        width: '100%',
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
-                                        alignItems: 'center',
-                                        padding: '16px 20px',
-                                        border: 'none',
-                                        backgroundColor: 'transparent',
-                                        cursor: 'pointer',
-                                        fontSize: '15px',
-                                        color: '#333',
-                                        textAlign: 'left'
-                                    }}
-                                >
-                                    페르소나 수정
-                                    <span style={{ color: '#ccc' }}>›</span>
-                                </button>
-                            </div>
-                        </div>
+                            <motion.button
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                onClick={() => setIsAccountManagementOpen(false)}
+                                style={{
+                                    marginTop: '8px',
+                                    padding: '12px',
+                                    borderRadius: '12px',
+                                    border: 'none',
+                                    backgroundColor: '#f1f3f5',
+                                    fontSize: '14px',
+                                    color: '#666',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                닫기
+                            </motion.button>
+                        </motion.div>
                     </motion.div>
-                )}
-            </AnimatePresence>
-
-            {/* Map Screen */}
-            <AnimatePresence>
-                {isMapOpen && (
-                    <MapScreen
-                        onClose={() => {
-                            setIsMapOpen(false);
-                            setSelectedLocation(null);
-                        }}
-                        onBack={() => {
-                            setIsMapOpen(false);
-                            setIsChatBotOpen(true);
-                        }}
-                        tripData={{
-                            destination: selectedLocation?.name || tripData?.region || '',
-                            participants: tripData?.participants || 1,
-                            startDate: tripData?.startDate || '',
-                            endDate: tripData?.endDate || ''
-                        }}
-                        initialLocation={selectedLocation}
-                        onScheduleSave={handleScheduleSave}
-                    />
-                )}
-            </AnimatePresence>
-
-            {/* Travel Detail View */}
-            <AnimatePresence>
-                {isDetailViewOpen && selectedTravel && (
-                    <TravelDetailView
-                        travel={selectedTravel}
-                        onClose={() => {
-                            setIsDetailViewOpen(false);
-                            setSelectedTravel(null);
-                        }}
-                        onDelete={handleScheduleDelete}
-                    />
                 )}
             </AnimatePresence>
 
             {/* Password Edit Screen */}
             <AnimatePresence>
                 {isPasswordEditOpen && (
-                    <PasswordEditScreen
-                        onClose={() => setIsPasswordEditOpen(false)}
-                        onBack={() => {
-                            setIsPasswordEditOpen(false);
-                            setIsAccountManagementOpen(true);
-                        }}
-                        userId={getUserId()}
-                    />
+                    <PasswordEditScreen onClose={() => setIsPasswordEditOpen(false)} />
                 )}
             </AnimatePresence>
 
             {/* Personal Info Edit Screen */}
             <AnimatePresence>
                 {isPersonalInfoEditOpen && (
-                    <PersonalInfoEditScreen
-                        onClose={() => {
-                            setIsPersonalInfoEditOpen(false);
-                            setIsAccountManagementOpen(true);
-                        }}
-                    />
+                    <PersonalInfoEditScreen onClose={() => setIsPersonalInfoEditOpen(false)} />
                 )}
             </AnimatePresence>
 
             {/* Persona Edit Screen */}
             <AnimatePresence>
                 {isPersonaEditOpen && (
-                    <PersonaEditScreen
-                        onClose={() => {
-                            setIsPersonaEditOpen(false);
-                            setIsAccountManagementOpen(true);
+                    <PersonaEditScreen onClose={() => setIsPersonaEditOpen(false)} />
+                )}
+            </AnimatePresence>
+
+            {/* Map Modal */}
+            <AnimatePresence>
+                {isMapOpen && (
+                    <MapScreen
+                        tripData={tripData || {
+                            destination: '',
+                            participants: 1,
+                            startDate: '',
+                            endDate: ''
                         }}
+                        onClose={() => setIsMapOpen(false)}
+                        initialLocation={selectedLocation}
+                        onScheduleSave={handleScheduleSave}
+                    />
+                )}
+            </AnimatePresence>
+
+            {/* Detail View */}
+            <AnimatePresence>
+                {isDetailViewOpen && selectedTravel && (
+                    <TravelDetailView
+                        travel={selectedTravel}
+                        onClose={() => setIsDetailViewOpen(false)}
+                        onDelete={handleScheduleDelete}
                     />
                 )}
             </AnimatePresence>
