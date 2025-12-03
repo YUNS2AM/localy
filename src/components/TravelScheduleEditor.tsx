@@ -44,6 +44,7 @@ export function TravelScheduleEditor({ onClose, onComplete, initialData }: Trave
     const [step, setStep] = useState(1);
     const [isMapOpen, setIsMapOpen] = useState(false);
     const [selectedDay, setSelectedDay] = useState(1);
+    const [destinationLocation, setDestinationLocation] = useState<{ lat: number; lng: number; name: string } | null>(null);
 
     // Basic Info State
     const [destination, setDestination] = useState(initialData?.destination || '');
@@ -76,8 +77,33 @@ export function TravelScheduleEditor({ onClose, onComplete, initialData }: Trave
         setStep(2);
     };
 
-    const handleAddPlace = (dayNum: number) => {
+    const handleAddPlace = async (dayNum: number) => {
         setSelectedDay(dayNum);
+
+        // Geocode destination if not already done
+        if (destination && !destinationLocation) {
+            if (typeof google !== 'undefined' && google.maps) {
+                try {
+                    const geocoder = new google.maps.Geocoder();
+                    geocoder.geocode(
+                        { address: destination + ', 대한민국' },
+                        (results, status) => {
+                            if (status === 'OK' && results && results[0] && results[0].geometry) {
+                                const location = {
+                                    lat: results[0].geometry.location.lat(),
+                                    lng: results[0].geometry.location.lng(),
+                                    name: destination
+                                };
+                                setDestinationLocation(location);
+                            }
+                        }
+                    );
+                } catch (error) {
+                    console.error('Geocoding error:', error);
+                }
+            }
+        }
+
         setIsMapOpen(true);
     };
 
@@ -357,6 +383,7 @@ export function TravelScheduleEditor({ onClose, onComplete, initialData }: Trave
                                                 type="date"
                                                 value={startDate}
                                                 onChange={(e) => setStartDate(e.target.value)}
+                                                min={new Date().toISOString().split('T')[0]}
                                                 placeholder="시작일"
                                                 style={{
                                                     width: '100%',
@@ -375,7 +402,7 @@ export function TravelScheduleEditor({ onClose, onComplete, initialData }: Trave
                                                 type="date"
                                                 value={endDate}
                                                 onChange={(e) => setEndDate(e.target.value)}
-                                                min={startDate}
+                                                min={startDate || new Date().toISOString().split('T')[0]}
                                                 placeholder="종료일"
                                                 style={{
                                                     width: '100%',
@@ -586,6 +613,7 @@ export function TravelScheduleEditor({ onClose, onComplete, initialData }: Trave
                     <MapScreen
                         onClose={() => setIsMapOpen(false)}
                         onSelect={handlePlaceSelect}
+                        initialLocation={destinationLocation}
                         tripData={{
                             destination,
                             participants,
