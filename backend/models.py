@@ -1,5 +1,13 @@
 from sqlalchemy import Column, Integer, String, Date, DateTime, func, ForeignKey, Text 
 from core.database import Base
+from datetime import datetime
+
+class WithdrawnUser(Base):
+    __tablename__ = "withdrawn_users"
+
+    # 탈퇴한 아이디만 저장 (Primary Key로 설정하여 중복 방지)
+    user_id = Column(String(50), primary_key=True) 
+    deleted_at = Column(DateTime, default=datetime.now) # 언제 탈퇴했는지
 
 
 # 유저 정보 모델

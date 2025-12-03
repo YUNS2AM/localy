@@ -3,18 +3,97 @@ DB 초기화 및 테스트 계정 생성 스크립트
 - MySQL에 테이블 자동 생성
 - 테스트용 계정 3개 자동 삽입
 """
+import bcrypt
 from datetime import date
 from sqlalchemy.orm import Session
-from core.database import engine, SessionLocal, Base
-from models import User
-from core.security import get_password_hash
+from sqlalchemy import Column, Integer, String, Date, DateTime, func, create_engine, text
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.ext.declarative import declarative_base
 
-# 비밀번호 암호화 설정
-# pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+########################## DB 정보 세팅 ##########################
+# 1. DB 연결 주소 (URL) 세팅
+SERVER_URL = "mysql+pymysql://root:1234@localhost:3306"
+SQLALCHEMY_DATABASE_URL = "mysql+pymysql://root:1234@localhost:3306/travel_platform"
 
-def hash_password(password: str) -> str:
-    """비밀번호를 bcrypt로 암호화"""
-    return get_password_hash(password)
+# 2. 일단 DB 접속 > 접속이 안되면은 데이터베이스 생성
+server_engine = create_engine(SERVER_URL, isolation_level = "AUTOCOMMIT")
+
+# 3. 데이터베이스 접속 시도 > 안되면 생성 시도
+try:
+    with server_engine.connect() as conn:
+        conn.execute(
+            text(f"CREATE DATABASE IF NOT EXISTS travel_platform DEFAULT CHARACTER SET utf8mb4;")
+        )
+        print("travel_platform 확인 또는 생성을 완료 했습니다.")
+except SQLAlchemyError as e:
+    print(f"travel_platform 확인 또는 생성을 실패 했습니다.\n{e}")
+
+# 4. 엔진 생성 (DB와 연결되는 핵심 객체)
+engine = create_engine(SQLALCHEMY_DATABASE_URL)
+
+# 5. 세션 생성 (실제 데이터 작업을 수행하는 도구)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+# 6. 모델들이 상속받을 기본 클래스 (이걸로 테이블을 만듭니다)
+Base = declarative_base()
+
+########################## 유저 정보 모델 세팅 ##########################
+class User(Base):
+    __tablename__ = "user"
+
+    # 기본키, 자동 증가
+    user_seq_no = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    
+    # 유저 아이디 (중복 불가)
+    user_id = Column(String(20), unique=True, nullable=False)
+    
+    # 비밀번호 (암호화되어 저장됨)
+    user_pw = Column(String(100), nullable=False)
+    
+    # 비밀번호 체크 여부 (기본값 Y)
+    user_pw_check = Column(String(1), default='Y', nullable=False)
+    
+    # 유저 이름
+    user_name = Column(String(10), nullable=False)
+    
+    # 유저 닉네임
+    user_nickname = Column(String(20), nullable=False)
+    
+    # 이메일 (중복 불가)
+    user_email = Column(String(50), unique=True, nullable=False)
+    
+    # 주소 정보
+    user_post = Column(String(5), nullable=False)
+    user_addr1 = Column(String(100), nullable=False)
+    user_addr2 = Column(String(100), nullable=True) # 상세주소는 없을 수도 있음 (NULL 허용)
+    
+    # 생년월일 및 성별
+    user_birth = Column(Date, default="2000-01-01", nullable=False)
+    user_gender = Column(String(1), nullable=False)
+    
+    # 관리 정보 (자동 생성)
+    user_create_date = Column(DateTime, default=func.now(), nullable=False)
+    user_update_date = Column(DateTime, default=func.now(), onupdate=func.now())
+    user_delete_date = Column(DateTime, nullable=True)
+    user_delete_check = Column(String(1), default="N", nullable=False)
+
+########################## 함수 세팅 ##########################
+# 패스워드 해싱 및 검증 함수
+def get_password_hash(password: str) -> str:
+    """
+    비밀번호를 해싱합니다.
+    bcrypt는 72바이트 제한이 있으므로 자동으로 잘라냅니다.
+    """
+    # 비밀번호를 UTF-8로 인코딩하고 72바이트로 제한
+    password_bytes = password.encode('utf-8')[:72]
+    
+    # salt를 생성하고 비밀번호를 해싱
+    salt = bcrypt.gensalt()
+    hashed = bcrypt.hashpw(password_bytes, salt)
+    
+    # 문자열로 반환
+    return hashed.decode('utf-8')
 
 def init_database():
     """데이터베이스 테이블 생성"""
@@ -48,7 +127,7 @@ def create_test_users(db: Session):
     test_users = [
         {
             "user_id": "test1",
-            "user_pw": hash_password("test1234!"),
+            "user_pw": get_password_hash("test1234!"),
             "user_name": "김테스트",
             "user_nickname": "테스터1",
             "user_email": "test1@example.com",
@@ -60,7 +139,7 @@ def create_test_users(db: Session):
         },
         {
             "user_id": "test2",
-            "user_pw": hash_password("test1234!"),
+            "user_pw": get_password_hash("test1234!"),
             "user_name": "이테스트",
             "user_nickname": "테스터2",
             "user_email": "test2@example.com",
@@ -72,7 +151,7 @@ def create_test_users(db: Session):
         },
         {
             "user_id": "admin",
-            "user_pw": hash_password("admin1234!"),
+            "user_pw": get_password_hash("admin1234!"),
             "user_name": "관리자",
             "user_nickname": "어드민",
             "user_email": "admin@example.com",

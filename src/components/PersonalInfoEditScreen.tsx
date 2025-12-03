@@ -33,7 +33,7 @@ export function PersonalInfoEditScreen({ onClose }: PersonalInfoEditScreenProps)
                 }));
             } catch (e) {
                 console.error('사용자 정보 로딩 실패:', e);
-            }
+            } ``
         }
     }, []);
 

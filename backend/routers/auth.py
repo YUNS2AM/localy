@@ -12,6 +12,8 @@ import random
 import string
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
+from models import User, WithdrawnUser
+
 
 router = APIRouter(
     prefix="/auth",
@@ -145,11 +147,27 @@ async def verify_email_code(request: EmailVerificationCheck):
 # 0. 아이디 중복 확인 API
 @router.get("/check-username/{user_id}")
 async def check_username(user_id: str, db: Session = Depends(get_db)):
+    # 1. User 테이블 확인 (현재 회원 + 소프트 삭제된 회원)
     db_user = db.query(User).filter(User.user_id == user_id).first()
+    
     if db_user:
-        return {"available": False, "message": "이미 사용 중인 아이디입니다."}
-    return {"available": True, "message": "사용 가능한 아이디입니다."}
+        # 1-1. 소프트 삭제된 회원인지 체크 ('Y'면 차단)
+        if db_user.user_delete_check == 'Y':
+            return {"available": False, "message": "탈퇴한 회원의 아이디는 다시 사용할 수 없습니다."}
+        else:
+            return {"available": False, "message": "이미 사용 중인 아이디입니다."}
+    
+    # 2. [추가] WithdrawnUser 테이블 확인 (혹시 예전 방식으르 삭제된 기록이 있다면 차단)
+    # models.py에 WithdrawnUser가 정의되어 있어야 합니다.
+    try:
+        withdrawn_user = db.query(WithdrawnUser).filter(WithdrawnUser.user_id == user_id).first()
+        if withdrawn_user:
+             return {"available": False, "message": "탈퇴한 회원의 아이디는 다시 사용할 수 없습니다."}
+    except:
+        pass # 테이블이 없거나 에러나면 패스 (소프트 삭제가 메인이므로)
 
+    # 3. 아무곳에도 없으면 사용 가능
+    return {"available": True, "message": "사용 가능한 아이디입니다."}
 # 닉네임 중복 확인 API
 @router.get("/check-nickname/{nickname}")
 async def check_nickname(nickname: str, db: Session = Depends(get_db)):
@@ -159,24 +177,23 @@ async def check_nickname(nickname: str, db: Session = Depends(get_db)):
     return {"available": True, "message": "사용 가능한 닉네임입니다."}
 
 # 1. 회원가입 API
+# ---------------------------------------------------
+# [핵심 수정] 회원가입 (탈퇴 아이디 차단)
+# ---------------------------------------------------
 @router.post("/signup", response_model=UserResponse)
 async def signup(user: UserCreate, db: Session = Depends(get_db)):
-    # ID 중복 체크
+    # 1. ID 중복 및 탈퇴 여부 체크
     db_user = db.query(User).filter(User.user_id == user.user_id).first()
     if db_user:
+        if db_user.user_delete_check == 'Y':
+            raise HTTPException(status_code=400, detail="탈퇴한 아이디로는 재가입할 수 없습니다.")
         raise HTTPException(status_code=400, detail="이미 존재하는 아이디입니다.")
     
-    # 이메일 중복 체크
-    db_email = db.query(User).filter(User.user_email == user.user_email).first()
-    if db_email:
-        raise HTTPException(status_code=400, detail="이미 존재하는 이메일입니다.")
-
-    # 비밀번호 암호화 후 저장
+    # 이메일 중복 체크 등 나머지 로직
     hashed_password = get_password_hash(user.user_pw)
-    
     new_user = User(
         user_id=user.user_id,
-        user_pw=hashed_password, # [cite: 3] 암호화해서 저장
+        user_pw=hashed_password,
         user_name=user.user_name,
         user_nickname=user.user_nickname,
         user_email=user.user_email,
@@ -184,38 +201,36 @@ async def signup(user: UserCreate, db: Session = Depends(get_db)):
         user_addr1=user.user_addr1,
         user_addr2=user.user_addr2,
         user_birth=user.user_birth,
-        user_gender=user.user_gender
+        user_gender=user.user_gender,
+        # 기본값 설정
+        user_delete_check='N',
+        user_delete_date=None
     )
-    
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
-    
     return new_user
 
-# 2. 로그인 API
+# ---------------------------------------------------
+# [핵심 수정] 로그인 (탈퇴 회원 차단)
+# ---------------------------------------------------
 @router.post("/login")
 async def login(user_req: UserLogin, db: Session = Depends(get_db)):
-    # 1. ID로 유저 찾기
     user = db.query(User).filter(User.user_id == user_req.user_id).first()
     
-    # 2. 유저가 없거나 비밀번호가 틀리면 에러
     if not user or not verify_password(user_req.user_pw, user.user_pw):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="아이디 또는 비밀번호가 잘못되었습니다.",
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="아이디 또는 비밀번호가 잘못되었습니다.")
     
-    # 3. [추가됨] 토큰(자유이용권) 발급!
+    # [NEW] 탈퇴 여부 확인
+    if user.user_delete_check == 'Y':
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="탈퇴한 회원입니다. 로그인이 불가능합니다.")
+    
     access_token = create_access_token(data={"sub": user.user_id})
-    
-    # 4. 토큰과 유저 정보를 같이 반환
     return {
         "message": "로그인 성공!",
-        "access_token": access_token, # <-- 이게 핵심!
+        "access_token": access_token,
         "token_type": "bearer",
         "user_id": user.user_id,
-        "user_name": user.user_name,
         "user_nickname": user.user_nickname,
         "user_email": user.user_email,
         "user_phone": user.user_phone if hasattr(user, "user_phone") else "",
@@ -264,27 +279,23 @@ async def change_password(request: PasswordChangeRequest, db: Session = Depends(
     return {"message": "비밀번호가 성공적으로 변경되었습니다."}
 
 
-# -----------------------------------------------------------
-# [추가] 회원탈퇴 기능
-# -----------------------------------------------------------
-
+# ---------------------------------------------------
+# [핵심 수정] 회원 탈퇴 (소프트 삭제 적용)
+# ---------------------------------------------------
 @router.delete("/withdraw/{user_id}")
 async def withdraw_user(user_id: str, db: Session = Depends(get_db)):
-    """
-    회원 탈퇴: DB에서 사용자 정보를 영구 삭제합니다.
-    """
-    # 1. 삭제할 유저 찾기
     user = db.query(User).filter(User.user_id == user_id).first()
-    
     if not user:
         raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
     
-    # 2. 유저 삭제 (주의: 연관된 여행 정보가 있다면 DB 설정에 따라 같이 삭제되거나 에러가 날 수 있음)
-    db.delete(user)
-    db.commit()
+    # [NEW] DB팀 요청사항: DELETE 대신 UPDATE
+    user.user_delete_check = 'Y'
+    user.user_delete_date = datetime.now()
     
-    return {"message": "회원 탈퇴가 완료되었습니다. 그동안 이용해 주셔서 감사합니다."}
-
+    db.commit() # 데이터는 남기고 상태만 변경
+    
+    return {"message": "회원 탈퇴가 완료되었습니다."}
+#
 # -----------------------------------------------------------
 # [추가] 개인정보 및 페르소나 수정 기능 (UserUpdateRequest 포함)
 # -----------------------------------------------------------

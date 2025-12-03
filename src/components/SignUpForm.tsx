@@ -95,21 +95,21 @@ export function SignupForm({ onSwitchToLogin, onSignupSuccess, onBack }: SignupF
         }
 
         try {
-            console.log('API 요청 시작: /auth/check-username/', username);
             const response = await fetch(`${myUrl}/auth/check-username/${encodeURIComponent(username)}`);
-            console.log('API 응답 받음:', response.status);
             const data = await response.json();
-            console.log('응답 데이터:', data);
 
             setIsUsernameChecked(true);
             setIsUsernameAvailable(data.available);
 
             if (data.available) {
+                // 사용 가능할 때
                 setUsernameError('');
                 alert('사용 가능한 아이디입니다.');
             } else {
-                setUsernameError('이미 사용 중인 아이디입니다.');
-                alert('이미 사용 중인 아이디입니다.');
+                // [수정됨] 사용 불가할 때 (탈퇴 or 중복)
+                // 서버가 보내준 친절한 메시지(data.message)를 그대로 보여줍니다!
+                setUsernameError(data.message);
+                alert(data.message);
             }
         } catch (error) {
             console.error('Username check error:', error);
