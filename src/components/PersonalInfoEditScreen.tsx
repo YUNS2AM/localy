@@ -1,15 +1,28 @@
-<<<<<<< HEAD
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowLeft, User, Mail, MapPin, Calendar, X } from 'lucide-react';
-=======
-import { motion } from 'motion/react';
-import { ArrowLeft, User, Mail, MapPin, Calendar, Phone } from 'lucide-react'; // 아이콘 추가
->>>>>>> a5aebdbfa5d564bdc2977f33786076dfa982be50
 import { useState, useEffect } from 'react';
 
 interface PersonalInfoEditScreenProps {
     onClose: () => void;
 }
+
+// Import validation functions if they exist
+// @ts-ignore
+const validateName = (name: string) => {
+    if (!name) return { isValid: false, errorMessage: '이름을 입력해주세요.' };
+    if (!/^[가-힣]+$/.test(name)) return { isValid: false, errorMessage: '이름은 한글만 입력 가능합니다.' };
+    return { isValid: true };
+};
+
+// @ts-ignore
+const validateNickname = (nickname: string) => {
+    if (!nickname) return { isValid: false, errorMessage: '닉네임을 입력해주세요.' };
+    if (nickname.length < 2) return { isValid: false, errorMessage: '닉네임은 2자 이상이어야 합니다.' };
+    if (nickname.length > 10) return { isValid: false, errorMessage: '닉네임은 10자 이하여야 합니다.' };
+    return { isValid: true };
+};
+
+const myUrl = 'http://localhost:8000'; // Adjust as needed
 
 export function PersonalInfoEditScreen({ onClose }: PersonalInfoEditScreenProps) {
     // 1. 회원가입 때 썼던 필드들과 동일하게 상태 관리
@@ -26,7 +39,6 @@ export function PersonalInfoEditScreen({ onClose }: PersonalInfoEditScreenProps)
         user_gender: ''
     });
 
-<<<<<<< HEAD
     // Validation errors
     const [nameError, setNameError] = useState('');
     const [nicknameError, setNicknameError] = useState('');
@@ -39,9 +51,7 @@ export function PersonalInfoEditScreen({ onClose }: PersonalInfoEditScreenProps)
     // Address modal state
     const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
 
-=======
     // 2. 화면이 열리면 localStorage에서 내 정보 가져오기
->>>>>>> a5aebdbfa5d564bdc2977f33786076dfa982be50
     useEffect(() => {
         const userStr = localStorage.getItem('user');
         if (userStr) {
@@ -51,13 +61,13 @@ export function PersonalInfoEditScreen({ onClose }: PersonalInfoEditScreenProps)
                     ...prev,
                     ...user // 저장된 정보로 덮어쓰기
                 }));
+                setOriginalNickname(user.user_nickname || '');
             } catch (e) {
                 console.error('사용자 정보 로딩 실패:', e);
             }
         }
     }, []);
 
-<<<<<<< HEAD
     // Open address modal and init Daum Postcode
     useEffect(() => {
         if (isAddressModalOpen && window.daum) {
@@ -104,9 +114,7 @@ export function PersonalInfoEditScreen({ onClose }: PersonalInfoEditScreenProps)
         }
     };
 
-=======
     // 3. 수정된 정보 저장하기
->>>>>>> a5aebdbfa5d564bdc2977f33786076dfa982be50
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         const userStr = localStorage.getItem('user');
@@ -137,8 +145,9 @@ export function PersonalInfoEditScreen({ onClose }: PersonalInfoEditScreenProps)
         setIsAddressModalOpen(true);
     };
 
+    const nicknameChanged = userInfo.user_nickname !== originalNickname;
+
     return (
-<<<<<<< HEAD
         <>
             <motion.div
                 initial={{ opacity: 0, x: 20 }}
@@ -165,59 +174,6 @@ export function PersonalInfoEditScreen({ onClose }: PersonalInfoEditScreenProps)
                     gap: '12px',
                     backgroundColor: 'rgba(255,255,255,0.95)',
                     backdropFilter: 'blur(10px)'
-=======
-        <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            transition={{ duration: 0.3 }}
-            style={{
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                height: '100vh',
-                backgroundColor: 'white',
-                zIndex: 1200,
-                display: 'flex',
-                flexDirection: 'column'
-            }}
-        >
-            {/* 헤더 */}
-            <div style={{
-                padding: '20px 30px',
-                borderBottom: '1px solid #eee',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                backgroundColor: 'rgba(255,255,255,0.95)',
-                backdropFilter: 'blur(10px)'
-            }}>
-                <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={onClose}
-                    style={{
-                        width: '40px',
-                        height: '40px',
-                        borderRadius: '50%',
-                        border: 'none',
-                        backgroundColor: '#f8f9fa',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                    }}
-                >
-                    <ArrowLeft size={20} color="#666" />
-                </motion.button>
-                <h2 style={{
-                    fontSize: '24px',
-                    fontWeight: 'bold',
-                    color: '#2D8B5F',
-                    margin: 0
->>>>>>> a5aebdbfa5d564bdc2977f33786076dfa982be50
                 }}>
                     <motion.button
                         whileHover={{ scale: 1.1 }}
@@ -247,7 +203,6 @@ export function PersonalInfoEditScreen({ onClose }: PersonalInfoEditScreenProps)
                     </h2>
                 </div>
 
-<<<<<<< HEAD
                 <div style={{ flex: 1, overflowY: 'auto', padding: '30px' }}>
                     <form onSubmit={handleSubmit}>
 
@@ -260,61 +215,6 @@ export function PersonalInfoEditScreen({ onClose }: PersonalInfoEditScreenProps)
                                 disabled
                                 readOnly
                                 style={{ ...inputStyle, backgroundColor: '#f5f5f5', color: '#999', cursor: 'not-allowed' }}
-=======
-            {/* 입력 폼 영역 */}
-            <div style={{ flex: 1, overflowY: 'scroll', padding: '30px', paddingBottom: '100px' }}>
-                <form onSubmit={handleSubmit}>
-
-                    {/* 아이디 (수정 불가) */}
-                    <div style={{ marginBottom: '24px' }}>
-                        <label style={labelStyle}>아이디</label>
-                        <input
-                            type="text"
-                            value={userInfo.user_id}
-                            disabled
-                            style={{ ...inputStyle, backgroundColor: '#f5f5f5', color: '#999' }}
-                        />
-                    </div>
-
-                    {/* 이름 */}
-                    <div style={{ marginBottom: '24px' }}>
-                        <label style={labelStyle}>이름</label>
-                        <div style={{ position: 'relative' }}>
-                            <User size={18} style={iconStyle} />
-                            <input
-                                type="text"
-                                value={userInfo.user_name}
-                                onChange={(e) => setUserInfo({ ...userInfo, user_name: e.target.value })}
-                                style={inputStyle}
-                            />
-                        </div>
-                    </div>
-
-                    {/* 닉네임 */}
-                    <div style={{ marginBottom: '24px' }}>
-                        <label style={labelStyle}>닉네임</label>
-                        <div style={{ position: 'relative' }}>
-                            <User size={18} style={iconStyle} />
-                            <input
-                                type="text"
-                                value={userInfo.user_nickname}
-                                onChange={(e) => setUserInfo({ ...userInfo, user_nickname: e.target.value })}
-                                style={inputStyle}
-                            />
-                        </div>
-                    </div>
-
-                    {/* 이메일 */}
-                    <div style={{ marginBottom: '24px' }}>
-                        <label style={labelStyle}>이메일</label>
-                        <div style={{ position: 'relative' }}>
-                            <Mail size={18} style={iconStyle} />
-                            <input
-                                type="email"
-                                value={userInfo.user_email}
-                                onChange={(e) => setUserInfo({ ...userInfo, user_email: e.target.value })}
-                                style={inputStyle}
->>>>>>> a5aebdbfa5d564bdc2977f33786076dfa982be50
                             />
                         </div>
 
@@ -393,7 +293,6 @@ export function PersonalInfoEditScreen({ onClose }: PersonalInfoEditScreenProps)
                             )}
                         </div>
 
-<<<<<<< HEAD
                         {/* 이메일 (수정 불가) */}
                         <div style={{ marginBottom: '24px' }}>
                             <label style={labelStyle}>이메일</label>
@@ -536,24 +435,6 @@ export function PersonalInfoEditScreen({ onClose }: PersonalInfoEditScreenProps)
                             alignItems: 'center',
                             justifyContent: 'center',
                             padding: '20px'
-=======
-                    {/* 저장 버튼 */}
-                    <motion.button
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        type="submit"
-                        style={{
-                            width: '100%',
-                            padding: '16px',
-                            borderRadius: '12px',
-                            border: 'none',
-                            background: 'linear-gradient(135deg, #2D8B5F 0%, #3BA474 100%)',
-                            color: 'white',
-                            fontSize: '16px',
-                            fontWeight: 'bold',
-                            cursor: 'pointer',
-                            boxShadow: '0 4px 12px rgba(45, 139, 95, 0.3)'
->>>>>>> a5aebdbfa5d564bdc2977f33786076dfa982be50
                         }}
                         onClick={() => setIsAddressModalOpen(false)}
                     >

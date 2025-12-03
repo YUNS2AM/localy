@@ -174,9 +174,14 @@ async def signup(user: UserCreate, db: Session = Depends(get_db)):
     # 비밀번호 암호화 후 저장
     hashed_password = get_password_hash(user.user_pw)
     
+    print(f"\n=== 회원가입 ===")
+    print(f"아이디: {user.user_id}")
+    print(f"평문 비밀번호: {user.user_pw}")
+    print(f"해시된 비밀번호: {hashed_password[:60]}...")
+    
     new_user = User(
         user_id=user.user_id,
-        user_pw=hashed_password, # [cite: 3] 암호화해서 저장
+        user_pw=hashed_password,  # 암호화해서 저장
         user_name=user.user_name,
         user_nickname=user.user_nickname,
         user_email=user.user_email,
@@ -193,26 +198,46 @@ async def signup(user: UserCreate, db: Session = Depends(get_db)):
     
     return new_user
 
-# 2. 로그인 API
+# 2. 로그인 API (디버그 로깅 추가)
 @router.post("/login")
 async def login(user_req: UserLogin, db: Session = Depends(get_db)):
+    print(f"\n=== 로그인 시도 ===")
+    print(f"입력된 아이디: {user_req.user_id}")
+    print(f"입력된 비밀번호: {user_req.user_pw}")
+    
     # 1. ID로 유저 찾기
     user = db.query(User).filter(User.user_id == user_req.user_id).first()
     
-    # 2. 유저가 없거나 비밀번호가 틀리면 에러
-    if not user or not verify_password(user_req.user_pw, user.user_pw):
+    if not user:
+        print(f"❌ 해당 아이디로 등록된 사용자를 찾을 수 없습니다: {user_req.user_id}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="아이디 또는 비밀번호가 잘못되었습니다.",
         )
     
-    # 3. [추가됨] 토큰(자유이용권) 발급!
+    print(f"✅ 사용자 찾음: {user.user_id}")
+    print(f"저장된 해시: {user.user_pw[:60]}...")
+    
+    # 2. 비밀번호 검증
+    password_valid = verify_password(user_req.user_pw, user.user_pw)
+    print(f"비밀번호 검증 결과: {password_valid}")
+    
+    if not password_valid:
+        print(f"❌ 비밀번호 불일치!")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="아이디 또는 비밀번호가 잘못되었습니다.",
+        )
+    
+    print(f"✅ 로그인 성공!")
+    
+    # 3. 토큰 발급
     access_token = create_access_token(data={"sub": user.user_id})
     
     # 4. 토큰과 유저 정보를 같이 반환
     return {
         "message": "로그인 성공!",
-        "access_token": access_token, # <-- 이게 핵심!
+        "access_token": access_token,
         "token_type": "bearer",
         "user_id": user.user_id,
         "user_name": user.user_name,
@@ -224,7 +249,7 @@ async def login(user_req: UserLogin, db: Session = Depends(get_db)):
         "user_addr2": user.user_addr2,
         "user_birth": str(user.user_birth) if user.user_birth else "",
         "user_gender": user.user_gender,
-        # [핵심 추가] 챗봇에서 저장한 페르소나 데이터도 함께 반환
+        # 챗봇에서 저장한 페르소나 데이터도 함께 반환
         "non_preferred_food": user.non_preferred_food if hasattr(user, "non_preferred_food") else "",
         "non_preferred_region": user.non_preferred_region if hasattr(user, "non_preferred_region") else ""
     }
@@ -234,32 +259,28 @@ async def login(user_req: UserLogin, db: Session = Depends(get_db)):
 # [추가] 비밀번호 변경 기능
 # -----------------------------------------------------------
 
-# 1. 비밀번호 변경 요청에 사용할 데이터 틀
 class PasswordChangeRequest(BaseModel):
-    user_id: str          # 누구의 비밀번호를 바꿀지 알아야 함
-    current_password: str # 현재 비밀번호 (확인용)
-    new_password: str     # 바꿀 비밀번호
+    user_id: str
+    current_password: str
+    new_password: str
 
 @router.put("/change-password")
 async def change_password(request: PasswordChangeRequest, db: Session = Depends(get_db)):
     """
     로그인한 사용자의 비밀번호를 변경합니다.
     """
-    # 1. 사용자 찾기 (DB에서 user_id로 조회)
     user = db.query(User).filter(User.user_id == request.user_id).first()
     
     if not user:
         raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
 
-    # 2. 현재 비밀번호가 맞는지 확인
     if not verify_password(request.current_password, user.user_pw):
         raise HTTPException(status_code=400, detail="현재 비밀번호가 일치하지 않습니다.")
 
-    # 3. 새 비밀번호 암호화해서 저장
     user.user_pw = get_password_hash(request.new_password)
     
     db.add(user)
-    db.commit() # 저장 확정
+    db.commit()
     
     return {"message": "비밀번호가 성공적으로 변경되었습니다."}
 
@@ -273,23 +294,20 @@ async def withdraw_user(user_id: str, db: Session = Depends(get_db)):
     """
     회원 탈퇴: DB에서 사용자 정보를 영구 삭제합니다.
     """
-    # 1. 삭제할 유저 찾기
     user = db.query(User).filter(User.user_id == user_id).first()
     
     if not user:
         raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
     
-    # 2. 유저 삭제 (주의: 연관된 여행 정보가 있다면 DB 설정에 따라 같이 삭제되거나 에러가 날 수 있음)
     db.delete(user)
     db.commit()
     
     return {"message": "회원 탈퇴가 완료되었습니다. 그동안 이용해 주셔서 감사합니다."}
 
 # -----------------------------------------------------------
-# [추가] 개인정보 및 페르소나 수정 기능 (UserUpdateRequest 포함)
+# [추가] 개인정보 및 페르소나 수정 기능
 # -----------------------------------------------------------
 
-# 1. 수정 요청 데이터 틀 만들기 (없다고 하셔서 새로 만듦!)
 class UserUpdateRequest(BaseModel):
     user_id: str
     user_nickname: str | None = None
@@ -297,23 +315,19 @@ class UserUpdateRequest(BaseModel):
     user_post: str | None = None
     user_addr1: str | None = None
     user_addr2: str | None = None
-    # 👇 채팅봇이 보내줄 데이터 필드
     non_preferred_food: str | None = None   
     non_preferred_region: str | None = None
 
-# 2. 실제 수정 기능 (API)
 @router.put("/update-profile")
 async def update_profile(request: UserUpdateRequest, db: Session = Depends(get_db)):
     """
     사용자 정보(개인정보 + 페르소나)를 수정합니다.
     """
-    # 1. 사용자 찾기
     user = db.query(User).filter(User.user_id == request.user_id).first()
     
     if not user:
         raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
     
-    # 2. 들어온 값만 쏙쏙 골라서 업데이트 (None인 건 건드리지 않음)
     if request.user_nickname is not None:
         user.user_nickname = request.user_nickname
     if request.user_phone is not None:
@@ -325,13 +339,11 @@ async def update_profile(request: UserUpdateRequest, db: Session = Depends(get_d
     if request.user_addr2 is not None:
         user.user_addr2 = request.user_addr2
         
-    # 👇 채팅 데이터 저장 부분
     if request.non_preferred_food is not None:
         user.non_preferred_food = request.non_preferred_food
     if request.non_preferred_region is not None:
         user.non_preferred_region = request.non_preferred_region
         
-    # 3. DB에 확정 짓기
     db.commit()
     db.refresh(user)
     
