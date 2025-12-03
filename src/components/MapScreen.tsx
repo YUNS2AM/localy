@@ -69,6 +69,13 @@ export function MapScreen({ tripData, onClose, onBack, initialLocation, onSchedu
         const initMap = async () => {
             if (!mapRef.current) return;
 
+            // Google Maps API가 로드될 때까지 대기
+            if (typeof google === 'undefined' || !google.maps) {
+                console.log('Google Maps API가 아직 로드되지 않았습니다. 대기 중...');
+                setTimeout(initMap, 100);
+                return;
+            }
+
             let center = { lat: 37.5665, lng: 126.9780 }; // 기본값: 서울
 
             if (initialLocation) {
