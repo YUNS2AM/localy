@@ -1,10 +1,5 @@
-<<<<<<< HEAD
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowLeft, User, Mail, MapPin, Calendar, X } from 'lucide-react';
-=======
-import { motion } from 'motion/react';
-import { ArrowLeft, User, Mail, MapPin, Calendar, Phone } from 'lucide-react'; // 아이콘 추가
->>>>>>> 1496fedb71b8ac764d2bde7428294923a39e8420
 import { useState, useEffect } from 'react';
 
 interface PersonalInfoEditScreenProps {
@@ -44,7 +39,6 @@ export function PersonalInfoEditScreen({ onClose }: PersonalInfoEditScreenProps)
         user_gender: ''
     });
 
-<<<<<<< HEAD
     // Validation errors
     const [nameError, setNameError] = useState('');
     const [nicknameError, setNicknameError] = useState('');
@@ -57,8 +51,6 @@ export function PersonalInfoEditScreen({ onClose }: PersonalInfoEditScreenProps)
     // Address modal state
     const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
 
-=======
->>>>>>> 1496fedb71b8ac764d2bde7428294923a39e8420
     // 2. 화면이 열리면 localStorage에서 내 정보 가져오기
     useEffect(() => {
         const userStr = localStorage.getItem('user');
@@ -76,7 +68,6 @@ export function PersonalInfoEditScreen({ onClose }: PersonalInfoEditScreenProps)
         }
     }, []);
 
-<<<<<<< HEAD
     // Open address modal and init Daum Postcode
     useEffect(() => {
         if (isAddressModalOpen && window.daum) {
@@ -123,8 +114,6 @@ export function PersonalInfoEditScreen({ onClose }: PersonalInfoEditScreenProps)
         }
     };
 
-=======
->>>>>>> 1496fedb71b8ac764d2bde7428294923a39e8420
     // 3. 수정된 정보 저장하기
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -171,7 +160,6 @@ export function PersonalInfoEditScreen({ onClose }: PersonalInfoEditScreenProps)
     const nicknameChanged = userInfo.user_nickname !== originalNickname;
 
     return (
-<<<<<<< HEAD
         <>
             <motion.div
                 initial={{ opacity: 0, x: 20 }}
@@ -184,12 +172,14 @@ export function PersonalInfoEditScreen({ onClose }: PersonalInfoEditScreenProps)
                     left: 0,
                     right: 0,
                     bottom: 0,
+                    height: '100vh',
                     backgroundColor: 'white',
                     zIndex: 1200,
                     display: 'flex',
                     flexDirection: 'column'
                 }}
             >
+                {/* 헤더 */}
                 <div style={{
                     padding: '20px 30px',
                     borderBottom: '1px solid #eee',
@@ -198,66 +188,37 @@ export function PersonalInfoEditScreen({ onClose }: PersonalInfoEditScreenProps)
                     gap: '12px',
                     backgroundColor: 'rgba(255,255,255,0.95)',
                     backdropFilter: 'blur(10px)'
-=======
-        <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            transition={{ duration: 0.3 }}
-            style={{
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                height: '100vh',
-                backgroundColor: 'white',
-                zIndex: 1200,
-                display: 'flex',
-                flexDirection: 'column'
-            }}
-        >
-            {/* 헤더 */}
-            <div style={{
-                padding: '20px 30px',
-                borderBottom: '1px solid #eee',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                backgroundColor: 'rgba(255,255,255,0.95)',
-                backdropFilter: 'blur(10px)'
-            }}>
-                <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={onClose}
-                    style={{
-                        width: '40px',
-                        height: '40px',
-                        borderRadius: '50%',
-                        border: 'none',
-                        backgroundColor: '#f8f9fa',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                    }}
-                >
-                    <ArrowLeft size={20} color="#666" />
-                </motion.button>
-                <h2 style={{
-                    fontSize: '24px',
-                    fontWeight: 'bold',
-                    color: '#2D8B5F',
-                    margin: 0
->>>>>>> 1496fedb71b8ac764d2bde7428294923a39e8420
                 }}>
-                    개인정보 수정
-                </h2>
-            </div>
+                    <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={onClose}
+                        style={{
+                            width: '40px',
+                            height: '40px',
+                            borderRadius: '50%',
+                            border: 'none',
+                            backgroundColor: '#f8f9fa',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                        }}
+                    >
+                        <ArrowLeft size={20} color="#666" />
+                    </motion.button>
+                    <h2 style={{
+                        fontSize: '24px',
+                        fontWeight: 'bold',
+                        color: '#2D8B5F',
+                        margin: 0
+                    }}>
+                        개인정보 수정
+                    </h2>
+                </div>
 
-<<<<<<< HEAD
-                <div style={{ flex: 1, overflowY: 'auto', padding: '30px' }}>
+                {/* 입력 폼 영역 */}
+                <div style={{ flex: 1, overflowY: 'scroll', padding: '30px', paddingBottom: '100px' }}>
                     <form onSubmit={handleSubmit}>
 
                         {/* 아이디 (수정 불가) */}
@@ -267,117 +228,39 @@ export function PersonalInfoEditScreen({ onClose }: PersonalInfoEditScreenProps)
                                 type="text"
                                 value={userInfo.user_id}
                                 disabled
-                                readOnly
-                                style={{ ...inputStyle, backgroundColor: '#f5f5f5', color: '#999', cursor: 'not-allowed' }}
-=======
-            {/* 입력 폼 영역 */}
-            <div style={{ flex: 1, overflowY: 'scroll', padding: '30px', paddingBottom: '100px' }}>
-                <form onSubmit={handleSubmit}>
-
-                    {/* 아이디 (수정 불가) */}
-                    <div style={{ marginBottom: '24px' }}>
-                        <label style={labelStyle}>아이디</label>
-                        <input
-                            type="text"
-                            value={userInfo.user_id}
-                            disabled
-                            style={{ ...inputStyle, backgroundColor: '#f5f5f5', color: '#999' }}
-                        />
-                    </div>
-
-                    {/* 이름 */}
-                    <div style={{ marginBottom: '24px' }}>
-                        <label style={labelStyle}>이름</label>
-                        <div style={{ position: 'relative' }}>
-                            <User size={18} style={iconStyle} />
-                            <input
-                                type="text"
-                                value={userInfo.user_name}
-                                onChange={(e) => setUserInfo({ ...userInfo, user_name: e.target.value })}
-                                style={inputStyle}
+                                style={{ ...inputStyle, backgroundColor: '#f5f5f5', color: '#999' }}
                             />
                         </div>
-                    </div>
 
-                    {/* 닉네임 */}
-                    <div style={{ marginBottom: '24px' }}>
-                        <label style={labelStyle}>닉네임</label>
-                        <div style={{ position: 'relative' }}>
-                            <User size={18} style={iconStyle} />
-                            <input
-                                type="text"
-                                value={userInfo.user_nickname}
-                                onChange={(e) => setUserInfo({ ...userInfo, user_nickname: e.target.value })}
-                                style={inputStyle}
-                            />
+                        {/* 이름 */}
+                        <div style={{ marginBottom: '24px' }}>
+                            <label style={labelStyle}>이름</label>
+                            <div style={{ position: 'relative' }}>
+                                <User size={18} style={iconStyle} />
+                                <input
+                                    type="text"
+                                    value={userInfo.user_name}
+                                    onChange={(e) => setUserInfo({ ...userInfo, user_name: e.target.value })}
+                                    style={inputStyle}
+                                />
+                            </div>
                         </div>
-                    </div>
 
-                    {/* 이메일 */}
-                    <div style={{ marginBottom: '24px' }}>
-                        <label style={labelStyle}>이메일</label>
-                        <div style={{ position: 'relative' }}>
-                            <Mail size={18} style={iconStyle} />
-                            <input
-                                type="email"
-                                value={userInfo.user_email}
-                                onChange={(e) => setUserInfo({ ...userInfo, user_email: e.target.value })}
-                                style={inputStyle}
->>>>>>> 1496fedb71b8ac764d2bde7428294923a39e8420
-                            />
+                        {/* 닉네임 */}
+                        <div style={{ marginBottom: '24px' }}>
+                            <label style={labelStyle}>닉네임</label>
+                            <div style={{ position: 'relative' }}>
+                                <User size={18} style={iconStyle} />
+                                <input
+                                    type="text"
+                                    value={userInfo.user_nickname}
+                                    onChange={(e) => setUserInfo({ ...userInfo, user_nickname: e.target.value })}
+                                    style={inputStyle}
+                                />
+                            </div>
                         </div>
-                    </div>
 
-                    {/* 주소 (우편번호 검색) */}
-                    <div style={{ marginBottom: '24px' }}>
-                        <label style={labelStyle}>주소</label>
-                        <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
-                            <input
-                                type="text"
-                                value={userInfo.user_post}
-                                placeholder="우편번호"
-                                readOnly
-                                style={{ ...inputStyle, width: '100px', paddingLeft: '14px' }}
-                            />
-                            <motion.button
-                                type="button"
-                                onClick={handleSearchAddress}
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                style={{
-                                    padding: '0 20px',
-                                    borderRadius: '12px',
-                                    border: '1px solid #2D8B5F',
-                                    backgroundColor: 'white',
-                                    color: '#2D8B5F',
-                                    fontWeight: '600',
-                                    cursor: 'pointer'
-                                }}
-                            >
-                                검색
-                            </motion.button>
-                        </div>
-                        <div style={{ position: 'relative', marginBottom: '8px' }}>
-                            <MapPin size={18} style={iconStyle} />
-                            <input
-                                type="text"
-                                value={userInfo.user_addr1}
-                                placeholder="기본 주소"
-                                readOnly
-                                style={inputStyle}
-                            />
-                        </div>
-                        <input
-                            type="text"
-                            value={userInfo.user_addr2}
-                            onChange={(e) => setUserInfo({ ...userInfo, user_addr2: e.target.value })}
-                            placeholder="상세 주소를 입력하세요"
-                            style={{ ...inputStyle, paddingLeft: '14px' }}
-                        />
-                    </div>
-
-<<<<<<< HEAD
-                        {/* 이메일 (수정 불가) */}
+                        {/* 이메일 */}
                         <div style={{ marginBottom: '24px' }}>
                             <label style={labelStyle}>이메일</label>
                             <div style={{ position: 'relative' }}>
@@ -385,38 +268,22 @@ export function PersonalInfoEditScreen({ onClose }: PersonalInfoEditScreenProps)
                                 <input
                                     type="email"
                                     value={userInfo.user_email}
-                                    disabled
-                                    readOnly
-                                    style={{ ...inputStyle, backgroundColor: '#f5f5f5', color: '#999', cursor: 'not-allowed' }}
+                                    onChange={(e) => setUserInfo({ ...userInfo, user_email: e.target.value })}
+                                    style={inputStyle}
                                 />
                             </div>
-=======
-                    {/* 생년월일 */}
-                    <div style={{ marginBottom: '32px' }}>
-                        <label style={labelStyle}>생년월일</label>
-                        <div style={{ position: 'relative' }}>
-                            <Calendar size={18} style={iconStyle} />
-                            <input
-                                type="date"
-                                value={userInfo.user_birth}
-                                onChange={(e) => setUserInfo({ ...userInfo, user_birth: e.target.value })}
-                                style={inputStyle}
-                            />
->>>>>>> 1496fedb71b8ac764d2bde7428294923a39e8420
                         </div>
-                    </div>
 
-<<<<<<< HEAD
-                        {/* 우편번호 */}
+                        {/* 주소 (우편번호 검색) */}
                         <div style={{ marginBottom: '24px' }}>
-                            <label style={labelStyle}>우편번호</label>
-                            <div style={{ display: 'flex', gap: '8px' }}>
+                            <label style={labelStyle}>주소</label>
+                            <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
                                 <input
                                     type="text"
                                     value={userInfo.user_post}
                                     placeholder="우편번호"
                                     readOnly
-                                    style={{ flex: 1, ...inputStyleNoIcon, backgroundColor: '#f8f9fa' }}
+                                    style={{ ...inputStyle, width: '100px', paddingLeft: '14px' }}
                                 />
                                 <motion.button
                                     type="button"
@@ -425,53 +292,38 @@ export function PersonalInfoEditScreen({ onClose }: PersonalInfoEditScreenProps)
                                     whileTap={{ scale: 0.95 }}
                                     style={{
                                         padding: '0 20px',
-                                        height: '50px',
                                         borderRadius: '12px',
-                                        border: 'none',
-                                        background: 'linear-gradient(135deg, #2D8B5F 0%, #3BA474 100%)',
-                                        color: 'white',
-                                        fontSize: '14px',
+                                        border: '1px solid #2D8B5F',
+                                        backgroundColor: 'white',
+                                        color: '#2D8B5F',
                                         fontWeight: '600',
                                         cursor: 'pointer'
                                     }}
                                 >
-                                    주소찾기
+                                    검색
                                 </motion.button>
                             </div>
-                        </div>
-
-                        {/* 주소 */}
-                        <div style={{ marginBottom: '24px' }}>
-                            <label style={labelStyle}>주소</label>
-                            <div style={{ position: 'relative' }}>
+                            <div style={{ position: 'relative', marginBottom: '8px' }}>
                                 <MapPin size={18} style={iconStyle} />
                                 <input
                                     type="text"
                                     value={userInfo.user_addr1}
-                                    placeholder="주소"
+                                    placeholder="기본 주소"
                                     readOnly
-                                    style={{ ...inputStyle, backgroundColor: '#f8f9fa' }}
-                                />
-                            </div>
-                        </div>
-
-                        {/* 상세주소 */}
-                        <div style={{ marginBottom: '24px' }}>
-                            <label style={labelStyle}>상세주소</label>
-                            <div style={{ position: 'relative' }}>
-                                <MapPin size={18} style={iconStyle} />
-                                <input
-                                    type="text"
-                                    value={userInfo.user_addr2}
-                                    onChange={(e) => setUserInfo({ ...userInfo, user_addr2: e.target.value })}
-                                    placeholder="상세주소"
                                     style={inputStyle}
                                 />
                             </div>
+                            <input
+                                type="text"
+                                value={userInfo.user_addr2}
+                                onChange={(e) => setUserInfo({ ...userInfo, user_addr2: e.target.value })}
+                                placeholder="상세 주소를 입력하세요"
+                                style={{ ...inputStyle, paddingLeft: '14px' }}
+                            />
                         </div>
 
                         {/* 생년월일 */}
-                        <div style={{ marginBottom: '24px' }}>
+                        <div style={{ marginBottom: '32px' }}>
                             <label style={labelStyle}>생년월일</label>
                             <div style={{ position: 'relative' }}>
                                 <Calendar size={18} style={iconStyle} />
@@ -534,31 +386,64 @@ export function PersonalInfoEditScreen({ onClose }: PersonalInfoEditScreenProps)
                             alignItems: 'center',
                             justifyContent: 'center',
                             padding: '20px'
-=======
-                    {/* 저장 버튼 */}
-                    <motion.button
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        type="submit"
-                        style={{
-                            width: '100%',
-                            padding: '16px',
-                            borderRadius: '12px',
-                            border: 'none',
-                            background: 'linear-gradient(135deg, #2D8B5F 0%, #3BA474 100%)',
-                            color: 'white',
-                            fontSize: '16px',
-                            fontWeight: 'bold',
-                            cursor: 'pointer',
-                            boxShadow: '0 4px 12px rgba(45, 139, 95, 0.3)'
->>>>>>> 1496fedb71b8ac764d2bde7428294923a39e8420
                         }}
                     >
-                        수정 완료
-                    </motion.button>
-                </form>
-            </div>
-        </motion.div>
+                        <motion.div
+                            initial={{ scale: 0.95, y: 20 }}
+                            animate={{ scale: 1, y: 0 }}
+                            exit={{ scale: 0.95, y: 20 }}
+                            style={{
+                                width: '100%',
+                                maxWidth: '500px',
+                                height: '600px',
+                                backgroundColor: 'white',
+                                borderRadius: '20px',
+                                overflow: 'hidden',
+                                position: 'relative'
+                            }}
+                        >
+                            {/* Modal Header */}
+                            <div style={{
+                                padding: '20px',
+                                borderBottom: '1px solid #eee',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between'
+                            }}>
+                                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '600' }}>주소 검색</h3>
+                                <motion.button
+                                    whileHover={{ scale: 1.1 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={() => setIsAddressModalOpen(false)}
+                                    style={{
+                                        width: '32px',
+                                        height: '32px',
+                                        borderRadius: '50%',
+                                        border: 'none',
+                                        backgroundColor: '#f8f9fa',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center'
+                                    }}
+                                >
+                                    <X size={18} />
+                                </motion.button>
+                            </div>
+
+                            {/* Daum Postcode Container */}
+                            <div
+                                id="daum-postcode-container-edit"
+                                style={{
+                                    width: '100%',
+                                    height: 'calc(100% - 60px)'
+                                }}
+                            />
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </>
     );
 }
 

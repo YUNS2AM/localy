@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Plus, MapPin, Calendar, Users, ArrowRight, ChevronLeft, Save } from 'lucide-react';
+import { X, Plus, Calendar, Users, ArrowRight, ChevronLeft, Save, Check } from 'lucide-react';
 import { useState } from 'react';
 import { MapScreen } from './MapScreen';
 
@@ -28,6 +28,18 @@ interface TravelScheduleEditorProps {
     initialData?: Partial<TravelData>;
 }
 
+// Region data structure
+const REGIONS: Record<string, string[]> = {
+    '서울': ['강남', '강동', '강북', '강서', '관악', '광진', '구로', '금천', '노원', '도봉', '동대문', '동작', '마포', '서대문', '서초', '성동', '성북', '송파', '양천', '영등포', '용산', '은평', '종로', '중구', '중랑'],
+    '경기/인천': ['가양', '강릉', '고양', '과천', '광명', '광주', '구리', '군포', '김포', '남양주', '동두천', '부천', '성남', '수원', '시흥', '안산', '안성', '안양', '양주', '여주', '연천', '오산', '용인', '의왕', '의정부', '이천', '파주', '평택', '포천', '하남', '화성'],
+    '충청/대전': ['계룡', '공주', '논산', '당진', '보령', '서산', '세종', '아산', '천안', '청주', '충주'],
+    '전라/광주': ['광양', '군산', '김제', '나주', '목포', '순천', '여수', '익산', '전주', '정읍'],
+    '경북/대구': ['경산', '경주', '구미', '김천', '문경', '상주', '안동', '영주', '영천', '포항'],
+    '경남/부산/울산': ['거제', '김해', '마산', '밀양', '사천', '양산', '진주', '창원', '통영'],
+    '강원': ['강릉', '동해', '속초', '원주', '춘천', '태백'],
+    '제주': ['서귀포', '제주시']
+};
+
 export function TravelScheduleEditor({ onClose, onComplete, initialData }: TravelScheduleEditorProps) {
     const [step, setStep] = useState(1);
     const [isMapOpen, setIsMapOpen] = useState(false);
@@ -35,6 +47,8 @@ export function TravelScheduleEditor({ onClose, onComplete, initialData }: Trave
 
     // Basic Info State
     const [destination, setDestination] = useState(initialData?.destination || '');
+    const [selectedProvince, setSelectedProvince] = useState<string>('서울');
+    const [isRegionPanelOpen, setIsRegionPanelOpen] = useState(true);
     const [startDate, setStartDate] = useState(initialData?.startDate || '');
     const [endDate, setEndDate] = useState(initialData?.endDate || '');
     const [participants, setParticipants] = useState(initialData?.participants || 1);
@@ -192,42 +206,158 @@ export function TravelScheduleEditor({ onClose, onComplete, initialData }: Trave
                                 exit={{ opacity: 0, x: 20 }}
                                 style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}
                             >
-                                {/* Destination */}
+                                {/* Destination - Collapsible Two Panel Selection */}
                                 <div>
-                                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#495057', marginBottom: '8px' }}>
+                                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#495057', marginBottom: '12px' }}>
                                         어디로 떠나시나요?
                                     </label>
-                                    <div style={{ position: 'relative' }}>
-                                        <MapPin size={20} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#ADB5BD' }} />
-                                        <input
-                                            type="text"
-                                            value={destination}
-                                            onChange={(e) => setDestination(e.target.value)}
-                                            placeholder="예: 부산, 제주도, 강릉..."
+
+                                    {/* Collapsed State - Shows selected destination */}
+                                    {!isRegionPanelOpen && destination && (
+                                        <motion.button
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            whileHover={{ scale: 1.02 }}
+                                            whileTap={{ scale: 0.98 }}
+                                            onClick={() => setIsRegionPanelOpen(true)}
                                             style={{
                                                 width: '100%',
-                                                padding: '16px 16px 16px 48px',
+                                                padding: '16px 20px',
                                                 borderRadius: '16px',
-                                                border: '1px solid #DEE2E6',
+                                                border: '1px solid #2D8B5F',
+                                                background: '#F0F9F4',
+                                                color: '#2D8B5F',
                                                 fontSize: '16px',
-                                                outline: 'none'
+                                                fontWeight: '600',
+                                                cursor: 'pointer',
+                                                display: 'flex',
+                                                justifyContent: 'space-between',
+                                                alignItems: 'center',
+                                                transition: 'all 0.2s'
                                             }}
-                                        />
-                                    </div>
+                                        >
+                                            <span>{destination}</span>
+                                            <Check size={20} />
+                                        </motion.button>
+                                    )}
+
+                                    {/* Expanded State - Shows region selection panel */}
+                                    <AnimatePresence>
+                                        {isRegionPanelOpen && (
+                                            <motion.div
+                                                initial={{ height: 0, opacity: 0 }}
+                                                animate={{ height: 400, opacity: 1 }}
+                                                exit={{ height: 0, opacity: 0 }}
+                                                transition={{ duration: 0.3 }}
+                                                style={{
+                                                    display: 'flex',
+                                                    gap: '16px',
+                                                    border: '1px solid #DEE2E6',
+                                                    borderRadius: '16px',
+                                                    overflow: 'hidden',
+                                                    backgroundColor: 'white'
+                                                }}
+                                            >
+                                                {/* Left Panel - Provinces */}
+                                                <div style={{
+                                                    width: '40%',
+                                                    borderRight: '1px solid #E9ECEF',
+                                                    overflowY: 'auto',
+                                                    backgroundColor: '#F8F9FA'
+                                                }}>
+                                                    {Object.keys(REGIONS).map((province) => (
+                                                        <motion.button
+                                                            key={province}
+                                                            whileHover={{ backgroundColor: '#F1F3F5' }}
+                                                            onClick={() => setSelectedProvince(province)}
+                                                            style={{
+                                                                width: '100%',
+                                                                padding: '16px 20px',
+                                                                border: 'none',
+                                                                borderBottom: '1px solid #E9ECEF',
+                                                                background: selectedProvince === province ? 'white' : 'transparent',
+                                                                color: selectedProvince === province ? '#2D8B5F' : '#495057',
+                                                                fontSize: '15px',
+                                                                fontWeight: selectedProvince === province ? '600' : '500',
+                                                                cursor: 'pointer',
+                                                                textAlign: 'left',
+                                                                display: 'flex',
+                                                                justifyContent: 'space-between',
+                                                                alignItems: 'center',
+                                                                transition: 'all 0.2s',
+                                                                position: 'relative'
+                                                            }}
+                                                        >
+                                                            <span>{province}</span>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                                <span style={{
+                                                                    fontSize: '12px',
+                                                                    color: '#868E96'
+                                                                }}>({REGIONS[province].length})</span>
+                                                                {selectedProvince === province && (
+                                                                    <Check size={16} color="#2D8B5F" />
+                                                                )}
+                                                            </div>
+                                                        </motion.button>
+                                                    ))}
+                                                </div>
+
+                                                {/* Right Panel - Districts */}
+                                                <div style={{
+                                                    flex: 1,
+                                                    overflowY: 'auto',
+                                                    padding: '16px'
+                                                }}>
+                                                    <div style={{
+                                                        display: 'grid',
+                                                        gridTemplateColumns: 'repeat(2, 1fr)',
+                                                        gap: '8px'
+                                                    }}>
+                                                        {REGIONS[selectedProvince]?.map((district) => (
+                                                            <motion.button
+                                                                key={district}
+                                                                whileHover={{ scale: 1.02 }}
+                                                                whileTap={{ scale: 0.98 }}
+                                                                onClick={() => {
+                                                                    setDestination(district);
+                                                                    setIsRegionPanelOpen(false);
+                                                                }}
+                                                                style={{
+                                                                    padding: '12px 14px',
+                                                                    borderRadius: '10px',
+                                                                    border: destination === district ? '2px solid #2D8B5F' : '1px solid #E9ECEF',
+                                                                    background: destination === district ? '#F0F9F4' : 'white',
+                                                                    color: destination === district ? '#2D8B5F' : '#495057',
+                                                                    fontSize: '14px',
+                                                                    fontWeight: destination === district ? '600' : '500',
+                                                                    cursor: 'pointer',
+                                                                    textAlign: 'center',
+                                                                    transition: 'all 0.2s'
+                                                                }}
+                                                            >
+                                                                {district}
+                                                            </motion.button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
                                 </div>
 
-                                {/* Dates */}
+                                {/* Dates - Unified Calendar */}
                                 <div>
                                     <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#495057', marginBottom: '8px' }}>
                                         언제 가시나요?
                                     </label>
-                                    <div style={{ display: 'flex', gap: '12px' }}>
-                                        <div style={{ flex: 1, position: 'relative' }}>
-                                            <Calendar size={20} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#ADB5BD' }} />
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                        <div style={{ position: 'relative' }}>
+                                            <Calendar size={20} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#ADB5BD', zIndex: 1 }} />
                                             <input
                                                 type="date"
                                                 value={startDate}
                                                 onChange={(e) => setStartDate(e.target.value)}
+                                                placeholder="시작일"
                                                 style={{
                                                     width: '100%',
                                                     padding: '16px 16px 16px 48px',
@@ -239,13 +369,14 @@ export function TravelScheduleEditor({ onClose, onComplete, initialData }: Trave
                                                 }}
                                             />
                                         </div>
-                                        <div style={{ flex: 1, position: 'relative' }}>
-                                            <Calendar size={20} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#ADB5BD' }} />
+                                        <div style={{ position: 'relative' }}>
+                                            <Calendar size={20} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#ADB5BD', zIndex: 1 }} />
                                             <input
                                                 type="date"
                                                 value={endDate}
                                                 onChange={(e) => setEndDate(e.target.value)}
                                                 min={startDate}
+                                                placeholder="종료일"
                                                 style={{
                                                     width: '100%',
                                                     padding: '16px 16px 16px 48px',
@@ -349,7 +480,7 @@ export function TravelScheduleEditor({ onClose, onComplete, initialData }: Trave
                                 </div>
 
                                 <div style={{ flex: 1, overflowY: 'auto' }}>
-                                    {days.map((dayNum, index) => {
+                                    {days.map((dayNum) => {
                                         const dayPlaces = getPlacesForDay(dayNum);
                                         return (
                                             <div key={dayNum} style={{ marginBottom: '32px' }}>
