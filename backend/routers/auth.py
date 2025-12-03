@@ -191,11 +191,6 @@ async def signup(user: UserCreate, db: Session = Depends(get_db)):
     
     # 이메일 중복 체크 등 나머지 로직
     hashed_password = get_password_hash(user.user_pw)
-<<<<<<< HEAD
-    new_user = User(
-        user_id=user.user_id,
-        user_pw=hashed_password,
-=======
     
     print(f"\n=== 회원가입 ===")
     print(f"아이디: {user.user_id}")
@@ -205,7 +200,6 @@ async def signup(user: UserCreate, db: Session = Depends(get_db)):
     new_user = User(
         user_id=user.user_id,
         user_pw=hashed_password,  # 암호화해서 저장
->>>>>>> 6b6e5a7e9da243444fca2f08ee076562fb6711a8
         user_name=user.user_name,
         user_nickname=user.user_nickname,
         user_email=user.user_email,
@@ -223,22 +217,6 @@ async def signup(user: UserCreate, db: Session = Depends(get_db)):
     db.refresh(new_user)
     return new_user
 
-<<<<<<< HEAD
-# ---------------------------------------------------
-# [핵심 수정] 로그인 (탈퇴 회원 차단)
-# ---------------------------------------------------
-@router.post("/login")
-async def login(user_req: UserLogin, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.user_id == user_req.user_id).first()
-    
-    if not user or not verify_password(user_req.user_pw, user.user_pw):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="아이디 또는 비밀번호가 잘못되었습니다.")
-    
-    # [NEW] 탈퇴 여부 확인
-    if user.user_delete_check == 'Y':
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="탈퇴한 회원입니다. 로그인이 불가능합니다.")
-    
-=======
 # 2. 로그인 API (디버그 로깅 추가)
 @router.post("/login")
 async def login(user_req: UserLogin, db: Session = Depends(get_db)):
@@ -273,7 +251,6 @@ async def login(user_req: UserLogin, db: Session = Depends(get_db)):
     print(f"✅ 로그인 성공!")
     
     # 3. 토큰 발급
->>>>>>> 6b6e5a7e9da243444fca2f08ee076562fb6711a8
     access_token = create_access_token(data={"sub": user.user_id})
     return {
         "message": "로그인 성공!",
@@ -329,24 +306,18 @@ async def change_password(request: PasswordChangeRequest, db: Session = Depends(
 # ---------------------------------------------------
 @router.delete("/withdraw/{user_id}")
 async def withdraw_user(user_id: str, db: Session = Depends(get_db)):
-<<<<<<< HEAD
-=======
     """
     회원 탈퇴: DB에서 사용자 정보를 영구 삭제합니다.
     """
->>>>>>> 6b6e5a7e9da243444fca2f08ee076562fb6711a8
     user = db.query(User).filter(User.user_id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
     
-<<<<<<< HEAD
     # [NEW] DB팀 요청사항: DELETE 대신 UPDATE
     user.user_delete_check = 'Y'
     user.user_delete_date = datetime.now()
-=======
     db.delete(user)
     db.commit()
->>>>>>> 6b6e5a7e9da243444fca2f08ee076562fb6711a8
     
     db.commit() # 데이터는 남기고 상태만 변경
     

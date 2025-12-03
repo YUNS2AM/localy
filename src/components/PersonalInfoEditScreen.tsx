@@ -6,21 +6,7 @@ interface PersonalInfoEditScreenProps {
     onClose: () => void;
 }
 
-// Import validation functions if they exist
-// @ts-ignore
-const validateName = (name: string) => {
-    if (!name) return { isValid: false, errorMessage: '이름을 입력해주세요.' };
-    if (!/^[가-힣]+$/.test(name)) return { isValid: false, errorMessage: '이름은 한글만 입력 가능합니다.' };
-    return { isValid: true };
-};
-
-// @ts-ignore
-const validateNickname = (nickname: string) => {
-    if (!nickname) return { isValid: false, errorMessage: '닉네임을 입력해주세요.' };
-    if (nickname.length < 2) return { isValid: false, errorMessage: '닉네임은 2자 이상이어야 합니다.' };
-    if (nickname.length > 10) return { isValid: false, errorMessage: '닉네임은 10자 이하여야 합니다.' };
-    return { isValid: true };
-};
+import { validateName, validateNickname } from '../utils/validation';
 
 const myUrl = 'http://localhost:8000'; // Adjust as needed
 
@@ -117,6 +103,29 @@ export function PersonalInfoEditScreen({ onClose }: PersonalInfoEditScreenProps)
     // 3. 수정된 정보 저장하기
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+
+        // Validate all fields before submitting
+        const nameValidation = validateName(userInfo.user_name);
+        const nicknameValidation = validateNickname(userInfo.user_nickname);
+
+        if (!nameValidation.isValid) {
+            setNameError(nameValidation.errorMessage || '');
+            alert(nameValidation.errorMessage);
+            return;
+        }
+        if (!nicknameValidation.isValid) {
+            setNicknameError(nicknameValidation.errorMessage || '');
+            alert(nicknameValidation.errorMessage);
+            return;
+        }
+
+        // Check nickname availability if changed
+        const nicknameChanged = userInfo.user_nickname !== originalNickname;
+        if (nicknameChanged && (!isNicknameChecked || !isNicknameAvailable)) {
+            alert('닉네임 중복확인을 완료해주세요.');
+            return;
+        }
+
         const userStr = localStorage.getItem('user');
 
         if (userStr) {
@@ -240,7 +249,12 @@ export function PersonalInfoEditScreen({ onClose }: PersonalInfoEditScreenProps)
                                 <input
                                     type="text"
                                     value={userInfo.user_name}
-                                    onChange={(e) => setUserInfo({ ...userInfo, user_name: e.target.value })}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        setUserInfo({ ...userInfo, user_name: val });
+                                        const validation = validateName(val);
+                                        setNameError(validation.isValid ? '' : validation.errorMessage || '');
+                                    }}
                                     style={inputStyle}
                                 />
                             </div>
@@ -254,7 +268,19 @@ export function PersonalInfoEditScreen({ onClose }: PersonalInfoEditScreenProps)
                                 <input
                                     type="text"
                                     value={userInfo.user_nickname}
-                                    onChange={(e) => setUserInfo({ ...userInfo, user_nickname: e.target.value })}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        setUserInfo({ ...userInfo, user_nickname: val });
+                                        if (val !== originalNickname) {
+                                            setIsNicknameChecked(false);
+                                            setIsNicknameAvailable(false);
+                                        } else {
+                                            setIsNicknameChecked(true);
+                                            setIsNicknameAvailable(true);
+                                        }
+                                        const validation = validateNickname(val);
+                                        setNicknameError(validation.isValid ? '' : validation.errorMessage || '');
+                                    }}
                                     style={inputStyle}
                                 />
                             </div>

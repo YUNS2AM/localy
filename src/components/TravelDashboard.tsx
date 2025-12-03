@@ -49,7 +49,6 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isNotificationOpen, setIsNotificationOpen] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-    const [isAccountManagementOpen, setIsAccountManagementOpen] = useState(false);
     const [isPasswordEditOpen, setIsPasswordEditOpen] = useState(false);
     const [isPersonalInfoEditOpen, setIsPersonalInfoEditOpen] = useState(false);
     const [isPersonaEditOpen, setIsPersonaEditOpen] = useState(false);
@@ -192,6 +191,7 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
         return "사용자";
     };
 
+    const userId = getUserId();
     const userName = getUserName();
     const unreadCount = notifications.filter(n => !n.isRead).length;
 
@@ -771,9 +771,53 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
                                 marginBottom: '30px',
                                 overflow: 'hidden'
                             }}>
-                                {/* 계정 관리 */}
+                                {/* 비밀번호 수정 */}
                                 <button
-                                    onClick={() => setIsAccountManagementOpen(true)}
+                                    onClick={() => setIsPasswordEditOpen(true)}
+                                    style={{
+                                        width: '100%',
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center',
+                                        padding: '16px 20px',
+                                        border: 'none',
+                                        borderBottom: '1px solid #f0f0f0',
+                                        backgroundColor: 'transparent',
+                                        cursor: 'pointer',
+                                        fontSize: '15px',
+                                        color: '#333',
+                                        textAlign: 'left'
+                                    }}
+                                >
+                                    비밀번호 수정
+                                    <span style={{ color: '#ccc' }}>›</span>
+                                </button>
+
+                                {/* 개인정보 수정 */}
+                                <button
+                                    onClick={() => setIsPersonalInfoEditOpen(true)}
+                                    style={{
+                                        width: '100%',
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center',
+                                        padding: '16px 20px',
+                                        border: 'none',
+                                        borderBottom: '1px solid #f0f0f0',
+                                        backgroundColor: 'transparent',
+                                        cursor: 'pointer',
+                                        fontSize: '15px',
+                                        color: '#333',
+                                        textAlign: 'left'
+                                    }}
+                                >
+                                    개인정보 수정
+                                    <span style={{ color: '#ccc' }}>›</span>
+                                </button>
+
+                                {/* 페르소나 수정 */}
+                                <button
+                                    onClick={() => setIsPersonaEditOpen(true)}
                                     style={{
                                         width: '100%',
                                         display: 'flex',
@@ -788,7 +832,7 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
                                         textAlign: 'left'
                                     }}
                                 >
-                                    계정 관리
+                                    페르소나 수정
                                     <span style={{ color: '#ccc' }}>›</span>
                                 </button>
                             </div>
@@ -828,8 +872,8 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
                                     padding: '16px',
                                     borderRadius: '12px',
                                     border: 'none',
-                                    backgroundColor: '#FFEBEE',
-                                    color: '#E84A5F',
+                                    backgroundColor: '#f1f3f5',
+                                    color: '#666',
                                     fontSize: '15px',
                                     fontWeight: '600',
                                     cursor: 'pointer',
@@ -840,149 +884,25 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
                             </motion.button>
 
                             {/* 회원탈퇴 버튼 */}
-                            <button
+                            <motion.button
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
                                 onClick={handleWithdraw}
                                 style={{
                                     width: '100%',
-                                    padding: '12px',
+                                    padding: '16px',
+                                    borderRadius: '12px',
                                     border: 'none',
-                                    backgroundColor: 'transparent',
-                                    color: '#999',
-                                    fontSize: '13px',
-                                    textDecoration: 'underline',
+                                    backgroundColor: '#FFEBEE',
+                                    color: '#E84A5F',
+                                    fontSize: '15px',
+                                    fontWeight: '600',
                                     cursor: 'pointer'
                                 }}
                             >
                                 회원탈퇴
-                            </button>
+                            </motion.button>
                         </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            {/* Account Management Modal */}
-            <AnimatePresence>
-                {isAccountManagementOpen && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        style={{
-                            position: 'fixed',
-                            top: 0,
-                            left: 0,
-                            right: 0,
-                            bottom: 0,
-                            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                            zIndex: 2000,
-                            display: 'flex',
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                            padding: '20px'
-                        }}
-                        onClick={() => setIsAccountManagementOpen(false)}
-                    >
-                        <motion.div
-                            initial={{ scale: 0.9, y: 20 }}
-                            animate={{ scale: 1, y: 0 }}
-                            exit={{ scale: 0.9, y: 20 }}
-                            style={{
-                                width: '100%',
-                                maxWidth: '320px',
-                                backgroundColor: 'white',
-                                borderRadius: '20px',
-                                padding: '24px',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: '12px'
-                            }}
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <h3 style={{ margin: '0 0 12px 0', fontSize: '18px', fontWeight: 'bold', textAlign: 'center' }}>
-                                계정 관리
-                            </h3>
-
-                            <motion.button
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                                onClick={() => {
-                                    setIsAccountManagementOpen(false);
-                                    setIsPasswordEditOpen(true);
-                                }}
-                                style={{
-                                    padding: '16px',
-                                    borderRadius: '12px',
-                                    border: '1px solid #eee',
-                                    backgroundColor: 'white',
-                                    fontSize: '15px',
-                                    color: '#333',
-                                    cursor: 'pointer',
-                                    textAlign: 'left'
-                                }}
-                            >
-                                비밀번호 변경
-                            </motion.button>
-
-                            <motion.button
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                                onClick={() => {
-                                    setIsAccountManagementOpen(false);
-                                    setIsPersonalInfoEditOpen(true);
-                                }}
-                                style={{
-                                    padding: '16px',
-                                    borderRadius: '12px',
-                                    border: '1px solid #eee',
-                                    backgroundColor: 'white',
-                                    fontSize: '15px',
-                                    color: '#333',
-                                    cursor: 'pointer',
-                                    textAlign: 'left'
-                                }}
-                            >
-                                개인정보 수정
-                            </motion.button>
-
-                            <motion.button
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                                onClick={() => {
-                                    setIsAccountManagementOpen(false);
-                                    setIsPersonaEditOpen(true);
-                                }}
-                                style={{
-                                    padding: '16px',
-                                    borderRadius: '12px',
-                                    border: '1px solid #eee',
-                                    backgroundColor: 'white',
-                                    fontSize: '15px',
-                                    color: '#333',
-                                    cursor: 'pointer',
-                                    textAlign: 'left'
-                                }}
-                            >
-                                페르소나 수정
-                            </motion.button>
-
-                            <motion.button
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                                onClick={() => setIsAccountManagementOpen(false)}
-                                style={{
-                                    marginTop: '8px',
-                                    padding: '12px',
-                                    borderRadius: '12px',
-                                    border: 'none',
-                                    backgroundColor: '#f1f3f5',
-                                    fontSize: '14px',
-                                    color: '#666',
-                                    cursor: 'pointer'
-                                }}
-                            >
-                                닫기
-                            </motion.button>
-                        </motion.div>
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -990,7 +910,11 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
             {/* Password Edit Screen */}
             <AnimatePresence>
                 {isPasswordEditOpen && (
-                    <PasswordEditScreen onClose={() => setIsPasswordEditOpen(false)} />
+                    <PasswordEditScreen
+                        userId={userId}
+                        onClose={() => setIsPasswordEditOpen(false)}
+                        onBack={() => setIsPasswordEditOpen(false)} // 뒤로가기 눌러도 닫히게
+                    />
                 )}
             </AnimatePresence>
 
