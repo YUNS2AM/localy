@@ -7,6 +7,7 @@ import { PasswordEditScreen } from './PasswordEditScreen';
 import { PersonalInfoEditScreen } from './PersonalInfoEditScreen';
 import { PersonaEditScreen } from './PersonaEditScreen';
 import { useState } from 'react';
+import { FloatingActionButton } from './FloatingActionButton';
 
 const myUrl = window.location.protocol + "//" + window.location.hostname + ":8000";
 
@@ -102,6 +103,15 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
 
         // 저장 후 맵 닫기
         setIsMapOpen(false);
+    };
+
+
+    // 직접 추가하기 핸들러 (새로 추가)
+    const handleManualAdd = () => {
+        // 챗봇 데이터 초기화 후 지도 열기
+        setTripData(null);
+        setSelectedLocation(null);
+        setIsMapOpen(true);
     };
 
     // 일정 삭제 핸들러
@@ -308,31 +318,30 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
                     style={{
                         display: 'flex',
                         justifyContent: 'center',
-                        marginBottom: '40px'
+                        marginBottom: '40px',
+                        // 버튼이 펼쳐질 공간 확보를 위해 zIndex와 position 설정이 필요할 수 있습니다.
+                        position: 'relative',
+                        zIndex: 50
                     }}
                 >
-                    <motion.button
+                    {/* ▼▼▼▼▼ 기존 버튼 삭제 ▼▼▼▼▼ */}
+                    {/* <motion.button
                         whileHover={{ scale: 1.05, boxShadow: '0 8px 24px rgba(45, 139, 95, 0.3)' }}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => setIsChatBotOpen(true)}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '10px',
-                            padding: '16px 32px',
-                            borderRadius: '50px',
-                            border: 'none',
-                            background: 'linear-gradient(135deg, #2D8B5F 0%, #3BA474 100%)',
-                            color: 'white',
-                            fontSize: '18px',
-                            fontWeight: '600',
-                            cursor: 'pointer',
-                            boxShadow: '0 4px 12px rgba(45, 139, 95, 0.3)'
-                        }}
+                        style={{ ... }}
                     >
                         <Plus size={24} strokeWidth={3} />
                         새 여행 추가하기
-                    </motion.button>
+                    </motion.button> */}
+                    {/* ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲ */}
+
+                    {/* ▼▼▼▼▼ 새 컴포넌트 추가 ▼▼▼▼▼ */}
+                    <FloatingActionButton
+                        onAIClick={() => setIsChatBotOpen(true)} // AI 버튼 클릭 시 챗봇 열기
+                        onMapClick={handleManualAdd}             // 지도 버튼 클릭 시 지도 열기
+                    />
+                    {/* ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲ */}
                 </motion.div>
 
                 {/* Travel List */}

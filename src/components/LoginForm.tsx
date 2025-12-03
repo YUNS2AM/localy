@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { User, Lock } from 'lucide-react';
 
 const myUrl = window.location.protocol + "//" + window.location.hostname + ":8000";
@@ -13,6 +13,60 @@ interface LoginFormProps {
 export function LoginForm({ onSwitchToSignup, onLoginSuccess, onBack }: LoginFormProps) {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const [autoLogin, setAutoLogin] = useState(false); // 자동 로그인 체크박스 상태
+
+    // 컴포넌트 마운트 시 자동 로그인 체크
+    useEffect(() => {
+        const savedAutoLogin = localStorage.getItem('autoLogin');
+        if (savedAutoLogin === 'true') {
+            const savedUsername = localStorage.getItem('savedUsername');
+            const savedPassword = localStorage.getItem('savedPassword');
+
+            if (savedUsername && savedPassword) {
+                console.log('자동 로그인 정보 발견, 자동 로그인 시도 중...');
+                setUsername(savedUsername);
+                setPassword(savedPassword);
+                setAutoLogin(true);
+
+                // 자동으로 로그인 실행
+                attemptAutoLogin(savedUsername, savedPassword);
+            }
+        }
+    }, []);
+
+    // 자동 로그인 시도 함수
+    const attemptAutoLogin = async (user: string, pass: string) => {
+        try {
+            const response = await fetch(`${myUrl}/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_id: user,
+                    user_pw: pass
+                })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                localStorage.setItem('user', JSON.stringify(data));
+                console.log('자동 로그인 성공!');
+                onLoginSuccess();
+            } else {
+                // 자동 로그인 실패 시 저장된 정보 삭제
+                console.log('자동 로그인 실패, 저장된 정보 삭제');
+                localStorage.removeItem('autoLogin');
+                localStorage.removeItem('savedUsername');
+                localStorage.removeItem('savedPassword');
+                setAutoLogin(false);
+            }
+        } catch (error) {
+            console.error('자동 로그인 에러:', error);
+            localStorage.removeItem('autoLogin');
+            localStorage.removeItem('savedUsername');
+            localStorage.removeItem('savedPassword');
+            setAutoLogin(false);
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -46,6 +100,19 @@ export function LoginForm({ onSwitchToSignup, onLoginSuccess, onBack }: LoginFor
             // 이제 user_addr1, user_birth 등 모든 정보가 들어갑니다.
             localStorage.setItem('user', JSON.stringify(data));
 
+            // 자동 로그인 체크되어 있으면 아이디/비밀번호 저장
+            if (autoLogin) {
+                localStorage.setItem('autoLogin', 'true');
+                localStorage.setItem('savedUsername', username);
+                localStorage.setItem('savedPassword', password);
+                console.log('자동 로그인 정보 저장 완료');
+            } else {
+                // 체크 해제되어 있으면 저장된 정보 삭제
+                localStorage.removeItem('autoLogin');
+                localStorage.removeItem('savedUsername');
+                localStorage.removeItem('savedPassword');
+            }
+
             onLoginSuccess();
         } catch (error) {
             console.error('Login error:', error);
@@ -66,7 +133,7 @@ export function LoginForm({ onSwitchToSignup, onLoginSuccess, onBack }: LoginFor
                 background: 'rgba(255, 255, 255, 0.95)',
                 backdropFilter: 'blur(20px)',
                 borderRadius: '20px',
-                boxShadow: '0 8px 32px rgba(45, 139, 95, 0.2)',
+                boxShadow: '0 8px 32px rg ba(45, 139, 95, 0.2)',
                 border: '1px solid rgba(45, 139, 95, 0.1)'
             }}
         >
@@ -126,7 +193,7 @@ export function LoginForm({ onSwitchToSignup, onLoginSuccess, onBack }: LoginFor
                 </div>
 
                 {/* 비밀번호 입력 */}
-                <div style={{ marginBottom: '24px' }}>
+                <div style={{ marginBottom: '20px' }}>
                     <label style={{
                         display: 'block',
                         marginBottom: '8px',
@@ -163,6 +230,33 @@ export function LoginForm({ onSwitchToSignup, onLoginSuccess, onBack }: LoginFor
                             onBlur={(e) => e.target.style.borderColor = 'rgba(45, 139, 95, 0.2)'}
                         />
                     </div>
+                </div>
+
+                {/* 자동 로그인 체크박스 */}
+                <div style={{ marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <input
+                        type="checkbox"
+                        id="autoLogin"
+                        checked={autoLogin}
+                        onChange={(e) => setAutoLogin(e.target.checked)}
+                        style={{
+                            width: '18px',
+                            height: '18px',
+                            cursor: 'pointer',
+                            accentColor: '#2D8B5F'
+                        }}
+                    />
+                    <label
+                        htmlFor="autoLogin"
+                        style={{
+                            color: '#666',
+                            fontSize: '14px',
+                            cursor: 'pointer',
+                            userSelect: 'none'
+                        }}
+                    >
+                        자동 로그인
+                    </label>
                 </div>
 
                 {/* 버튼들 - 돌아가기와 로그인 버튼을 나란히 배치 */}
