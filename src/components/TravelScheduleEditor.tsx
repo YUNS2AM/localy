@@ -121,6 +121,31 @@ export function TravelScheduleEditor({ onClose, onComplete, initialData }: Trave
         setIsMapOpen(false);
     };
 
+    const handleScheduleSave = (travelData: any) => {
+        // Map the places from the optimized schedule to the format expected by TravelData
+        const formattedPlaces: Place[] = travelData.places.map((place: any, index: number) => ({
+            id: Date.now() + index,
+            day: 1, // Will be distributed across days
+            name: place.name,
+            category: place.category || 'place',
+            address: place.vicinity || '',
+            lat: place.geometry?.location?.lat() || 0,
+            lng: place.geometry?.location?.lng() || 0
+        }));
+
+        const finalTravelData: TravelData = {
+            title: travelData.title,
+            destination: travelData.destination,
+            startDate: travelData.startDate,
+            endDate: travelData.endDate,
+            participants: travelData.participants,
+            places: formattedPlaces
+        };
+
+        onComplete(finalTravelData);
+        setIsMapOpen(false);
+    };
+
     const handleSave = () => {
         const travelData: TravelData = {
             title: `${destination} 여행`,
@@ -382,7 +407,14 @@ export function TravelScheduleEditor({ onClose, onComplete, initialData }: Trave
                                             <input
                                                 type="date"
                                                 value={startDate}
-                                                onChange={(e) => setStartDate(e.target.value)}
+                                                onChange={(e) => {
+                                                    const newStartDate = e.target.value;
+                                                    setStartDate(newStartDate);
+                                                    // If end date is before new start date, reset end date
+                                                    if (endDate && newStartDate > endDate) {
+                                                        setEndDate('');
+                                                    }
+                                                }}
                                                 min={new Date().toISOString().split('T')[0]}
                                                 placeholder="시작일"
                                                 style={{
@@ -613,6 +645,7 @@ export function TravelScheduleEditor({ onClose, onComplete, initialData }: Trave
                     <MapScreen
                         onClose={() => setIsMapOpen(false)}
                         onSelect={handlePlaceSelect}
+                        onScheduleSave={handleScheduleSave}
                         initialLocation={destinationLocation}
                         tripData={{
                             destination,

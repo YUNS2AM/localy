@@ -502,7 +502,14 @@ export function TravelChatBot({ onClose, onComplete, onMapSelect }: TravelChatBo
                                     <input
                                         type="date"
                                         value={startDate}
-                                        onChange={(e) => setStartDate(e.target.value)}
+                                        onChange={(e) => {
+                                            const newStartDate = e.target.value;
+                                            setStartDate(newStartDate);
+                                            // If end date is before new start date, reset end date
+                                            if (endDate && newStartDate > endDate) {
+                                                setEndDate('');
+                                            }
+                                        }}
                                         min={new Date().toISOString().split('T')[0]}
                                         style={{
                                             width: '100%',
