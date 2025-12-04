@@ -106,3 +106,54 @@ export const getPasswordStrength = (password: string): PasswordStrength => {
         hasMinNumbers: hasMinNumbers(password)
     };
 };
+
+// 이메일 유효성 검사
+export const validateEmail = (email: string): ValidationResult => {
+    if (!email) {
+        return { isValid: false, errorMessage: '이메일을 입력해주세요.' };
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        return { isValid: false, errorMessage: '올바른 이메일 형식이 아닙니다.' };
+    }
+    return { isValid: true };
+};
+
+// 전화번호 유효성 검사 (한국 전화번호 형식)
+export const validatePhone = (phone: string): ValidationResult => {
+    if (!phone) {
+        return { isValid: false, errorMessage: '전화번호를 입력해주세요.' };
+    }
+    const phoneRegex = /^01[0-9]-?[0-9]{3,4}-?[0-9]{4}$/;
+    if (!phoneRegex.test(phone)) {
+        return { isValid: false, errorMessage: '올바른 전화번호 형식이 아닙니다. (예: 010-1234-5678)' };
+    }
+    return { isValid: true };
+};
+
+// 생년월일 유효성 검사
+export const validateBirth = (birth: string): ValidationResult => {
+    if (!birth) {
+        return { isValid: false, errorMessage: '생년월일을 입력해주세요.' };
+    }
+    const birthDate = new Date(birth);
+    const today = new Date();
+    const minAge = 14; // 최소 나이 제한
+    const maxAge = 120; // 최대 나이 제한
+
+    const age = today.getFullYear() - birthDate.getFullYear();
+
+    if (isNaN(birthDate.getTime())) {
+        return { isValid: false, errorMessage: '올바른 날짜 형식이 아닙니다.' };
+    }
+    if (birthDate > today) {
+        return { isValid: false, errorMessage: '생년월일은 오늘 이전이어야 합니다.' };
+    }
+    if (age < minAge) {
+        return { isValid: false, errorMessage: `만 ${minAge}세 이상만 가입할 수 있습니다.` };
+    }
+    if (age > maxAge) {
+        return { isValid: false, errorMessage: '올바른 생년월일을 입력해주세요.' };
+    }
+    return { isValid: true };
+};

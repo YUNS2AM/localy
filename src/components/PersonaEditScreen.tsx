@@ -64,13 +64,16 @@ export function PersonaEditScreen({ onClose }: PersonaEditScreenProps) {
             style={{
                 position: 'fixed',
                 top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
+                left: '50%',
+                transform: 'translateX(-50%)',
+                width: '100%',
+                maxWidth: '480px',
+                height: '100vh',
                 backgroundColor: 'white',
                 zIndex: 1200,
                 display: 'flex',
-                flexDirection: 'column'
+                flexDirection: 'column',
+                boxShadow: '0 0 20px rgba(0, 0, 0, 0.1)'
             }}
         >
             {/* Header */}

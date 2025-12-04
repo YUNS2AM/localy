@@ -257,6 +257,7 @@ async def login(user_req: UserLogin, db: Session = Depends(get_db)):
         "access_token": access_token,
         "token_type": "bearer",
         "user_id": user.user_id,
+        "user_name": user.user_name,  # 이름 추가
         "user_nickname": user.user_nickname,
         "user_email": user.user_email,
         "user_phone": user.user_phone if hasattr(user, "user_phone") else "",
