@@ -86,19 +86,50 @@ export function PersonalInfoEditScreen({ onClose }: PersonalInfoEditScreenProps)
 
     // Open address modal and init Daum Postcode
     useEffect(() => {
-        if (isAddressModalOpen && window.daum) {
-            new window.daum.Postcode({
-                oncomplete: function (data: any) {
-                    setUserInfo(prev => ({
-                        ...prev,
-                        user_post: data.zonecode,
-                        user_addr1: data.roadAddress
-                    }));
-                    setIsAddressModalOpen(false);
-                },
-                width: '100%',
-                height: '100%'
-            }).embed(document.getElementById('daum-postcode-container-edit'));
+        if (isAddressModalOpen) {
+            console.log('[Address Modal] Opening...');
+
+            const initPostcode = () => {
+                console.log('[Address Modal] Attempting to initialize');
+                const container = document.getElementById('daum-postcode-container-edit');
+
+                if (!container) {
+                    console.error('[Address Modal] Container not found, retrying...');
+                    setTimeout(initPostcode, 200);
+                    return;
+                }
+
+                console.log('[Address Modal] Container found:', container);
+
+                if (window.daum && window.daum.Postcode) {
+                    console.log('[Address Modal] Daum Postcode available, embedding...');
+                    try {
+                        new window.daum.Postcode({
+                            oncomplete: function (data: any) {
+                                console.log('[Address Modal] Address selected:', data);
+                                setUserInfo(prev => ({
+                                    ...prev,
+                                    user_post: data.zonecode,
+                                    user_addr1: data.roadAddress
+                                }));
+                                setIsAddressModalOpen(false);
+                            },
+                            width: '100%',
+                            height: '100%'
+                        }).embed(container);
+                        console.log('[Address Modal] Embed successful');
+                    } catch (error) {
+                        console.error('[Address Modal] Embed error:', error);
+                    }
+                } else {
+                    console.error('[Address Modal] Daum Postcode not available, retrying...');
+                    setTimeout(initPostcode, 200);
+                }
+            };
+
+            // Wait longer for DOM to be ready
+            const timer = setTimeout(initPostcode, 300);
+            return () => clearTimeout(timer);
         }
     }, [isAddressModalOpen]);
 
