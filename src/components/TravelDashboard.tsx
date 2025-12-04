@@ -144,6 +144,10 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
         if (window.confirm('로그아웃 하시겠습니까?')) {
             localStorage.removeItem('user');  // 유저 정보 삭제
             localStorage.removeItem('token'); // [추가] 토큰(세션) 삭제
+            // 자동 로그인 정보 삭제
+            localStorage.removeItem('autoLogin');
+            localStorage.removeItem('savedUsername');
+            localStorage.removeItem('savedPassword');
             window.location.href = '/';
         }
     };
