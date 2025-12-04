@@ -1,6 +1,7 @@
 import { motion } from 'motion/react';
 import { useState, useEffect } from 'react';
 import { User, Lock } from 'lucide-react';
+import BACKGROUND_IMAGE from "../assets/bg.png";
 
 const myUrl = window.location.protocol + "//" + window.location.hostname + ":8000";
 
@@ -13,79 +14,52 @@ interface LoginFormProps {
 export function LoginForm({ onSwitchToSignup, onLoginSuccess, onBack }: LoginFormProps) {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
-    const [autoLogin, setAutoLogin] = useState(false); // 자동 로그인 체크박스 상태
+    const [autoLogin, setAutoLogin] = useState(false);
 
-    // 컴포넌트 마운트 시 자동 로그인 체크
     useEffect(() => {
         const savedAutoLogin = localStorage.getItem('autoLogin');
         if (savedAutoLogin === 'true') {
             const savedUsername = localStorage.getItem('savedUsername');
             const savedPassword = localStorage.getItem('savedPassword');
-
             if (savedUsername && savedPassword) {
-                console.log('자동 로그인 정보 발견, 자동 로그인 시도 중...');
                 setUsername(savedUsername);
                 setPassword(savedPassword);
                 setAutoLogin(true);
-
-                // 자동으로 로그인 실행
                 attemptAutoLogin(savedUsername, savedPassword);
             }
         }
     }, []);
 
-    // 자동 로그인 시도 함수
     const attemptAutoLogin = async (user: string, pass: string) => {
         try {
             const response = await fetch(`${myUrl}/auth/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    user_id: user,
-                    user_pw: pass
-                })
+                body: JSON.stringify({ user_id: user, user_pw: pass })
             });
-
             if (response.ok) {
                 const data = await response.json();
                 localStorage.setItem('user', JSON.stringify(data));
-                console.log('자동 로그인 성공!');
                 onLoginSuccess();
             } else {
-                // 자동 로그인 실패 시 저장된 정보 삭제
-                console.log('자동 로그인 실패, 저장된 정보 삭제');
                 localStorage.removeItem('autoLogin');
                 localStorage.removeItem('savedUsername');
                 localStorage.removeItem('savedPassword');
                 setAutoLogin(false);
             }
         } catch (error) {
-            console.error('자동 로그인 에러:', error);
-            localStorage.removeItem('autoLogin');
-            localStorage.removeItem('savedUsername');
-            localStorage.removeItem('savedPassword');
             setAutoLogin(false);
         }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        console.log('로그인 버튼 클릭됨! username:', username, 'password:', password);
-
         try {
-            console.log('API 요청 시작...');
             const response = await fetch(`${myUrl}/auth/login`, {
-                method: 'POST',  // 👈 이게 꼭 있어야 합니다! (없으면 405 에러 남)
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    user_id: username,
-                    user_pw: password
-                })
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: username, user_pw: password })
             });
-
-            console.log('API 응답 받음:', response.status);
 
             if (!response.ok) {
                 const error = await response.json();
@@ -93,235 +67,246 @@ export function LoginForm({ onSwitchToSignup, onLoginSuccess, onBack }: LoginFor
                 return;
             }
 
-            const data = await response.json(); // 서버에서 준 모든 정보(data)를 받음
-            console.log('Login success:', data);
-
-            // [수정됨] 서버가 준 모든 정보를 통째로 저장!
-            // 이제 user_addr1, user_birth 등 모든 정보가 들어갑니다.
+            const data = await response.json();
             localStorage.setItem('user', JSON.stringify(data));
 
-            // 자동 로그인 체크되어 있으면 아이디/비밀번호 저장
             if (autoLogin) {
                 localStorage.setItem('autoLogin', 'true');
                 localStorage.setItem('savedUsername', username);
                 localStorage.setItem('savedPassword', password);
-                console.log('자동 로그인 정보 저장 완료');
             } else {
-                // 체크 해제되어 있으면 저장된 정보 삭제
                 localStorage.removeItem('autoLogin');
                 localStorage.removeItem('savedUsername');
                 localStorage.removeItem('savedPassword');
             }
-
             onLoginSuccess();
         } catch (error) {
             console.error('Login error:', error);
-            alert('서버 연결에 실패했습니다. 백엔드 서버가 실행 중인지 확인해주세요.');
+            alert('서버 연결 실패');
         }
     };
 
     return (
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
-            style={{
+        // [1] 전체 화면 컨테이너 (PC 화면 배경색 & 중앙 정렬 담당)
+        <div style={{
+            width: '100vw',
+            height: '100vh',
+            backgroundColor: '#f0f2f5', // PC 화면의 남는 여백 색상 (연한 회색 추천)
+            display: 'flex',            // 내용물 중앙 정렬을 위한 Flexbox
+            justifyContent: 'center',   // 가로 중앙
+            alignItems: 'center',       // 세로 중앙
+        }}>
+
+            {/* [2] 실제 앱 화면 (여기에 배경 이미지와 maxWidth 적용) */}
+            <div style={{
+                position: 'relative',   // absolute 대신 relative 사용 (부모에 맞춰 정렬되도록)
                 width: '100%',
-                maxWidth: '400px',
-                padding: '40px',
-                background: 'rgba(255, 255, 255, 0.95)',
-                backdropFilter: 'blur(20px)',
-                borderRadius: '20px',
-                boxShadow: '0 8px 32px rg ba(45, 139, 95, 0.2)',
-                border: '1px solid rgba(45, 139, 95, 0.1)'
-            }}
-        >
-            <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-                <h2 style={{
-                    fontSize: '28px',
-                    fontWeight: 'bold',
-                    color: '#2D8B5F',
-                    marginBottom: '8px'
-                }}>
-                    어서오세요
-                </h2>
-                <p style={{ color: '#666', fontSize: '14px' }}>
-                    계정에 로그인하세요
-                </p>
+                height: '100%',
+                maxWidth: '480px',      // 모바일 최대 너비 제한
+                backgroundImage: `url(${BACKGROUND_IMAGE})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                display: 'flex',
+                flexDirection: 'column', // 내부 요소 정렬
+                justifyContent: 'center',
+                alignItems: 'center',
+                boxShadow: '0 0 20px rgba(0,0,0,0.1)', // 앱 화면이 떠보이게 그림자 추가 (선택사항)
+                overflow: 'hidden'      // 둥근 모서리 밖으로 배경 튀어나감 방지
+            }}>
+
+                {/* 배경 어둡게 하는 오버레이 */}
+                <div style={{
+                    position: 'absolute',
+                    top: 0, left: 0, width: '100%', height: '100%',
+                    background: 'linear-gradient(to top, rgba(0,0,0,0.3), transparent)',
+                    zIndex: 1
+                }} />
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    transition={{ duration: 0.3 }}
+                    style={{
+                        position: 'relative',
+                        zIndex: 10,
+                        width: '90%',
+                        maxWidth: '400px',
+                        padding: '40px',
+
+                        // 🔥 여기가 핵심: 진짜 유리처럼 만드는 코드
+                        background: 'rgba(255, 255, 255, 0.55)', // 흰색 투명도 25% (뒤가 보여야 함)
+                        backdropFilter: 'blur(20px)',           // 뒤 배경 흐리게 (아이폰 효과)
+                        WebkitBackdropFilter: 'blur(20px)',     // 사파리 브라우저 호환
+                        borderRadius: '30px',                   // 둥근 모서리
+                        boxShadow: '0 8px 40px 0 rgba(31, 38, 135, 0.15)', // 부드러운 그림자
+                        border: '1px solid rgba(255, 255, 255, 0.4)', // 유리 테두리 반사광
+                        borderTop: '1px solid rgba(255, 255, 255, 0.7)', // 위쪽 빛 반사 강조
+                        borderLeft: '1px solid rgba(255, 255, 255, 0.7)'  // 왼쪽 빛 반사 강조
+                    }}
+                >
+
+                    <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+                        <h2 style={{
+                            fontSize: '32px',
+                            fontWeight: '800',
+                            color: '#2e5c47ff', // 숲 배경에 맞춰 짙은 녹색으로 변경 (가독성 UP)
+                            marginBottom: '8px',
+                            textShadow: '0 2px 4px rgba(255,255,255,0.5)' // 글씨가 배경에 묻히지 않게
+                        }}>
+                            어서오세요
+                        </h2>
+                        <p style={{ color: '#2d4a3e', fontSize: '15px', fontWeight: '500' }}>
+                            계정에 로그인하세요
+                        </p>
+                    </div>
+
+                    <form onSubmit={handleSubmit}>
+                        {/* 아이디 입력창 - 유리 위에 올라가는 거라 반투명하게 */}
+                        <div style={{ marginBottom: '20px' }}>
+                            <label style={{ display: 'block', marginBottom: '8px', color: '#1a5e3f', fontSize: '14px', fontWeight: '700' }}>
+                                아이디
+                            </label>
+                            <div style={{ position: 'relative' }}>
+                                <User size={20} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#2D8B5F' }} />
+                                <input
+                                    type="text"
+                                    value={username}
+                                    onChange={(e) => setUsername(e.target.value)}
+                                    placeholder="아이디를 입력하세요"
+                                    style={{
+                                        width: '100%',
+                                        padding: '16px 16px 16px 48px',
+                                        borderRadius: '20px',
+                                        border: '1px solid rgba(255,255,255, 0.6)', // 테두리도 반투명
+                                        backgroundColor: 'rgba(255, 255, 255, 0.6)', // 입력창 배경도 살짝 투명하게
+                                        fontSize: '15px',
+                                        outline: 'none',
+                                        boxSizing: 'border-box',
+                                        color: '#333'
+                                    }}
+                                    onFocus={(e) => {
+                                        e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.9)'; // 포커스 되면 밝게
+                                        e.target.style.boxShadow = '0 0 0 4px rgba(45, 139, 95, 0.2)';
+                                    }}
+                                    onBlur={(e) => {
+                                        e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.6)';
+                                        e.target.style.boxShadow = 'none';
+                                    }}
+                                />
+                            </div>
+                        </div>
+
+                        {/* 비밀번호 입력창 */}
+                        <div style={{ marginBottom: '20px' }}>
+                            <label style={{ display: 'block', marginBottom: '8px', color: '#1a5e3f', fontSize: '14px', fontWeight: '700' }}>
+                                비밀번호
+                            </label>
+                            <div style={{ position: 'relative' }}>
+                                <Lock size={20} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#2D8B5F' }} />
+                                <input
+                                    type="password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    placeholder="비밀번호를 입력하세요"
+                                    style={{
+                                        width: '100%',
+                                        padding: '16px 16px 16px 48px',
+                                        borderRadius: '20px',
+                                        border: '1px solid rgba(255,255,255, 0.6)',
+                                        backgroundColor: 'rgba(255, 255, 255, 0.6)',
+                                        fontSize: '15px',
+                                        outline: 'none',
+                                        boxSizing: 'border-box',
+                                        color: '#333'
+                                    }}
+                                    onFocus={(e) => {
+                                        e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
+                                        e.target.style.boxShadow = '0 0 0 4px rgba(45, 139, 95, 0.2)';
+                                    }}
+                                    onBlur={(e) => {
+                                        e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.6)';
+                                        e.target.style.boxShadow = 'none';
+                                    }}
+                                />
+                            </div>
+                        </div>
+
+                        {/* 자동 로그인 */}
+                        <div style={{ marginBottom: '32px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <input
+                                type="checkbox"
+                                id="autoLogin"
+                                checked={autoLogin}
+                                onChange={(e) => setAutoLogin(e.target.checked)}
+                                style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: '#2D8B5F' }}
+                            />
+                            <label htmlFor="autoLogin" style={{ color: '#2d4a3e', fontSize: '14px', cursor: 'pointer', fontWeight: '600' }}>
+                                자동 로그인
+                            </label>
+                        </div>
+
+                        {/* 버튼 영역 */}
+                        <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
+                            <motion.button
+                                type="button"
+                                onClick={onBack}
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                style={{
+                                    flex: 1,
+                                    padding: '16px',
+                                    borderRadius: '16px',
+                                    border: '1px solid #2D8B5F',
+                                    background: 'rgba(255,255,255,0.8)', // 버튼도 약간 투명
+                                    color: '#2D8B5F',
+                                    fontSize: '16px',
+                                    fontWeight: '700',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                돌아가기
+                            </motion.button>
+
+                            <motion.button
+                                type="submit"
+                                whileHover={{ scale: 1.02, boxShadow: "0 10px 20px rgba(45, 139, 95, 0.3)" }}
+                                whileTap={{ scale: 0.98 }}
+                                style={{
+                                    flex: 2,
+                                    padding: '16px',
+                                    borderRadius: '16px',
+                                    border: 'none',
+                                    background: 'linear-gradient(135deg, #2D8B5F 0%, #3DAF7A 100%)', // 그라데이션 버튼
+                                    color: 'white',
+                                    fontSize: '16px',
+                                    fontWeight: '700',
+                                    cursor: 'pointer',
+                                    boxShadow: '0 4px 15px rgba(45, 139, 95, 0.3)'
+                                }}
+                            >
+                                로그인
+                            </motion.button>
+                        </div>
+
+                        <div style={{ textAlign: 'center' }}>
+                            <button
+                                type="button"
+                                onClick={onSwitchToSignup}
+                                style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    color: '#2d4a3e',
+                                    fontSize: '14px',
+                                    cursor: 'pointer',
+                                    fontWeight: '600'
+                                }}
+                            >
+                                계정이 없으신가요? <span style={{ color: '#1a5e3f', fontWeight: '800', textDecoration: 'underline' }}>회원가입</span>
+                            </button>
+                        </div>
+                    </form>
+                </motion.div>
             </div>
-
-            <form onSubmit={handleSubmit}>
-                {/* 아이디 입력 */}
-                <div style={{ marginBottom: '20px' }}>
-                    <label style={{
-                        display: 'block',
-                        marginBottom: '8px',
-                        color: '#2D8B5F',
-                        fontSize: '14px',
-                        fontWeight: '500'
-                    }}>
-                        아이디
-                    </label>
-                    <div style={{ position: 'relative' }}>
-                        <User size={20} style={{
-                            position: 'absolute',
-                            left: '12px',
-                            top: '50%',
-                            transform: 'translateY(-50%)',
-                            color: '#2D8B5F',
-                            opacity: 0.6
-                        }} />
-                        <input
-                            type="text"
-                            value={username}
-                            onChange={(e) => setUsername(e.target.value)}
-                            placeholder="아이디를 입력하세요"
-                            style={{
-                                width: '100%',
-                                padding: '12px 12px 12px 44px',
-                                borderRadius: '12px',
-                                border: '2px solid rgba(45, 139, 95, 0.2)',
-                                fontSize: '14px',
-                                transition: 'all 0.2s',
-                                boxSizing: 'border-box'
-                            }}
-                            onFocus={(e) => e.target.style.borderColor = '#2D8B5F'}
-                            onBlur={(e) => e.target.style.borderColor = 'rgba(45, 139, 95, 0.2)'}
-                        />
-                    </div>
-                </div>
-
-                {/* 비밀번호 입력 */}
-                <div style={{ marginBottom: '20px' }}>
-                    <label style={{
-                        display: 'block',
-                        marginBottom: '8px',
-                        color: '#2D8B5F',
-                        fontSize: '14px',
-                        fontWeight: '500'
-                    }}>
-                        비밀번호
-                    </label>
-                    <div style={{ position: 'relative' }}>
-                        <Lock size={20} style={{
-                            position: 'absolute',
-                            left: '12px',
-                            top: '50%',
-                            transform: 'translateY(-50%)',
-                            color: '#2D8B5F',
-                            opacity: 0.6
-                        }} />
-                        <input
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            placeholder="비밀번호를 입력하세요"
-                            style={{
-                                width: '100%',
-                                padding: '12px 12px 12px 44px',
-                                borderRadius: '12px',
-                                border: '2px solid rgba(45, 139, 95, 0.2)',
-                                fontSize: '14px',
-                                transition: 'all 0.2s',
-                                boxSizing: 'border-box'
-                            }}
-                            onFocus={(e) => e.target.style.borderColor = '#2D8B5F'}
-                            onBlur={(e) => e.target.style.borderColor = 'rgba(45, 139, 95, 0.2)'}
-                        />
-                    </div>
-                </div>
-
-                {/* 자동 로그인 체크박스 */}
-                <div style={{ marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <input
-                        type="checkbox"
-                        id="autoLogin"
-                        checked={autoLogin}
-                        onChange={(e) => setAutoLogin(e.target.checked)}
-                        style={{
-                            width: '18px',
-                            height: '18px',
-                            cursor: 'pointer',
-                            accentColor: '#2D8B5F'
-                        }}
-                    />
-                    <label
-                        htmlFor="autoLogin"
-                        style={{
-                            color: '#666',
-                            fontSize: '14px',
-                            cursor: 'pointer',
-                            userSelect: 'none'
-                        }}
-                    >
-                        자동 로그인
-                    </label>
-                </div>
-
-                {/* 버튼들 - 돌아가기와 로그인 버튼을 나란히 배치 */}
-                <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
-                    <motion.button
-                        type="button"
-                        onClick={onBack}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        style={{
-                            flex: 1,
-                            padding: '14px',
-                            borderRadius: '12px',
-                            border: '2px solid #2D8B5F',
-                            background: 'white',
-                            color: '#2D8B5F',
-                            fontSize: '16px',
-                            fontWeight: '600',
-                            cursor: 'pointer'
-                        }}
-                    >
-                        돌아가기
-                    </motion.button>
-
-                    <motion.button
-                        type="submit"
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        style={{
-                            flex: 1,
-                            padding: '14px',
-                            borderRadius: '12px',
-                            border: 'none',
-                            background: 'linear-gradient(135deg, #2D8B5F 0%, #3BA474 100%)',
-                            color: 'white',
-                            fontSize: '16px',
-                            fontWeight: '600',
-                            cursor: 'pointer',
-                            boxShadow: '0 4px 12px rgba(45, 139, 95, 0.3)'
-                        }}
-                    >
-                        로그인
-                    </motion.button>
-                </div>
-
-                {/* 회원가입 링크 */}
-                <div style={{ textAlign: 'center' }}>
-                    <span style={{ color: '#666', fontSize: '14px' }}>계정이 없으신가요? </span>
-                    <button
-                        type="button"
-                        onClick={onSwitchToSignup}
-                        style={{
-                            background: 'none',
-                            border: 'none',
-                            color: '#2D8B5F',
-                            fontSize: '14px',
-                            fontWeight: '600',
-                            cursor: 'pointer',
-                            textDecoration: 'underline'
-                        }}
-                    >
-                        회원가입
-                    </button>
-                </div>
-            </form>
-        </motion.div>
+        </div>
     );
 }

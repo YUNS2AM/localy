@@ -26,7 +26,7 @@ export function Navbar() {
                     alignItems: 'center',
                     gap: '8px',
                     color: 'white',
-                    fontSize: '1.5rem',
+                    fontSize: '1.2rem',
                     fontWeight: 'bold',
                     cursor: 'pointer',
                     textShadow: '0 2px 4px rgba(0,0,0,0.1)'

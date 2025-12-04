@@ -78,7 +78,7 @@ export function HeroSection({ onLogin, onSignup }: HeroSectionProps) {
         >
           <h1 style={{
             fontFamily: "Georgia, serif",
-            fontSize: "clamp(3rem, 8vw, 6rem)", // 반응형 폰트 크기
+            fontSize: "clamp(2rem, 8vw, 5rem)", // 반응형 폰트 크기
             lineHeight: "1.2",
             color: "white",
             textShadow: "0 4px 20px rgba(0,0,0,0.3)",
@@ -106,7 +106,7 @@ export function HeroSection({ onLogin, onSignup }: HeroSectionProps) {
               onClick={onLogin}
               style={{
                 position: 'relative',
-                padding: '16px 48px',
+                padding: '16px 35px',
                 borderRadius: '9999px',
                 backgroundColor: 'rgba(255,255,255,0.2)', // 반투명 배경
                 border: '2px solid rgba(255,255,255,0.4)',
@@ -118,7 +118,7 @@ export function HeroSection({ onLogin, onSignup }: HeroSectionProps) {
                 overflow: 'hidden',
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '12px'
+                gap: '15px'
               }}
               whileHover={{ scale: 1.05, backgroundColor: 'rgba(255,255,255,0.3)' }}
               whileTap={{ scale: 0.98 }}
