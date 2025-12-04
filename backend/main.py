@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from routers import auth
 from core.database import engine, Base  # 1. engine과 Base 가져오기
 
-# 3. 서버 시작 때 테이블 생성 (없으면 만들고, 있으면 넘어감)
+# 2. 서버 시작 때 테이블 생성 (없으면 만들고, 있으면 넘어감)
 Base.metadata.create_all(bind=engine)
 
 # 앱 초기화

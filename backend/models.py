@@ -8,8 +8,7 @@ class WithdrawnUser(Base):
     # 탈퇴한 아이디만 저장 (Primary Key로 설정하여 중복 방지)
     user_id = Column(String(50), primary_key=True) 
     deleted_at = Column(DateTime, default=datetime.now) # 언제 탈퇴했는지
-
-
+    
 # 유저 정보 모델
 class User(Base):
     __tablename__ = "user"
