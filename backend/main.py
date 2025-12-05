@@ -1,6 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import auth
+from dotenv import load_dotenv
+import os
+
+# .env 파일에서 환경 변수 로드
+load_dotenv()
+
+from routers import auth, ai, langgraph_chat  # LangGraph 라우터 추가
 from core.database import engine, Base  # 1. engine과 Base 가져오기
 
 # 2. 서버 시작 때 테이블 생성 (없으면 만들고, 있으면 넘어감)
@@ -17,8 +23,10 @@ app = FastAPI(
 # 리액트 기본 포트인 3000번을 허용해줍니다.
 origins = [
     "http://localhost:3000",
+    "http://localhost:3001",  # Vite 자동 포트 변경
     "http://localhost:5173",
     "http://127.0.0.1:3000",
+    "http://127.0.0.1:3001",  # Vite 자동 포트 변경
     "http://localhost:5000",
     "http://127.0.0.1:5000",
     "http://localhost:5173",
@@ -56,6 +64,9 @@ def health_check():
 
 # 라우터 등록
 app.include_router(auth.router)
+app.include_router(ai.router)  # AI 챗봇 라우터 등록
+app.include_router(langgraph_chat.router)  # LangGraph 멀티에이전트 라우터 등록
+
 
 
 
