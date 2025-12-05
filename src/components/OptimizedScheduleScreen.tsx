@@ -21,6 +21,7 @@ interface OptimizedScheduleScreenProps {
         endDate: string;
         participants: number;
     };
+    selectedDay?: number;  // Optional: if provided, show only this day's schedule
     onClose: () => void;
     onSave?: (travel: {
         id: number;
@@ -144,12 +145,17 @@ function distributePlacesByDays(places: Place[], days: number): Place[][] {
     return distributed;
 }
 
-export function OptimizedScheduleScreen({ places, tripData, onClose, onSave }: OptimizedScheduleScreenProps) {
+export function OptimizedScheduleScreen({ places, tripData, selectedDay, onClose, onSave }: OptimizedScheduleScreenProps) {
     const tripDays = calculateTripDays(tripData.startDate, tripData.endDate);
     const dailySchedules = React.useMemo(() => {
+        // If selectedDay is provided, show only one day's schedule
+        if (selectedDay !== undefined) {
+            return [optimizeRoute(places)];
+        }
+        // Otherwise, distribute places across all days
         const distributedPlaces = distributePlacesByDays(places, tripDays);
         return distributedPlaces.map(dayPlaces => optimizeRoute(dayPlaces));
-    }, [places, tripDays]);
+    }, [places, tripDays, selectedDay]);
 
     const handleSave = () => {
         if (!onSave) return;
@@ -241,7 +247,13 @@ export function OptimizedScheduleScreen({ places, tripData, onClose, onSave }: O
                         </motion.button>
                         <div style={{ flex: 1 }}>
                             <h2 style={{ fontSize: '20px', fontWeight: 'bold', color: '#2D8B5F', margin: 0 }}>최적화된 일정</h2>
-                            <p style={{ fontSize: '13px', color: '#999', margin: '4px 0 0 0' }}>{tripData.destination} · {tripData.startDate} ~ {tripData.endDate} ({tripDays}일)</p>
+                            <p style={{ fontSize: '13px', color: '#999', margin: '4px 0 0 0' }}>
+                                {tripData.destination} ·
+                                {selectedDay !== undefined
+                                    ? `Day ${selectedDay}`
+                                    : `${tripData.startDate} ~ ${tripData.endDate} (${tripDays}일)`
+                                }
+                            </p>
                         </div>
                         <div style={{ padding: '8px 16px', borderRadius: '20px', backgroundColor: '#2D8B5F15', display: 'flex', alignItems: 'center', gap: '6px' }}>
                             <TrendingUp size={16} color="#2D8B5F" />
@@ -274,7 +286,9 @@ export function OptimizedScheduleScreen({ places, tripData, onClose, onSave }: O
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 20px', backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)', borderLeft: '4px solid #2D8B5F' }}>
                                         <Calendar size={24} color="#2D8B5F" />
                                         <div>
-                                            <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#2D8B5F', margin: 0 }}>Day {dayIndex + 1}</h3>
+                                            <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#2D8B5F', margin: 0 }}>
+                                                Day {selectedDay !== undefined ? selectedDay : dayIndex + 1}
+                                            </h3>
                                             <p style={{ fontSize: '13px', color: '#999', margin: '2px 0 0 0' }}>{daySchedule.length}개 장소 방문 예정</p>
                                         </div>
                                     </div>
@@ -315,8 +329,19 @@ export function OptimizedScheduleScreen({ places, tripData, onClose, onSave }: O
                     </AnimatePresence>
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: dailySchedules.length * 0.2 + 0.5 }} style={{ marginTop: '24px', padding: '20px', backgroundColor: 'white', borderRadius: '16px', textAlign: 'center', boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)' }}>
                         <Calendar size={32} color="#2D8B5F" style={{ margin: '0 auto 12px' }} />
-                        <h4 style={{ fontSize: '16px', fontWeight: '700', color: '#333', margin: '0 0 8px 0' }}>{tripDays}일간의 완벽한 일정이 준비되었습니다!</h4>
-                        <p style={{ fontSize: '13px', color: '#666', margin: '0 0 16px 0', lineHeight: '1.5' }}>각 날짜별로 동선을 최적화하여 이동 시간을 최소화했습니다.<br />즐거운 여행 되세요! 🎉</p>
+                        <h4 style={{ fontSize: '16px', fontWeight: '700', color: '#333', margin: '0 0 8px 0' }}>
+                            {selectedDay !== undefined
+                                ? `Day ${selectedDay}의 완벽한 일정이 준비되었습니다!`
+                                : `${tripDays}일간의 완벽한 일정이 준비되었습니다!`
+                            }
+                        </h4>
+                        <p style={{ fontSize: '13px', color: '#666', margin: '0 0 16px 0', lineHeight: '1.5' }}>
+                            {selectedDay !== undefined
+                                ? '동선을 최적화하여 이동 시간을 최소화했습니다.'
+                                : '각 날짜별로 동선을 최적화하여 이동 시간을 최소화했습니다.'
+                            }
+                            <br />즐거운 여행 되세요! 🎉
+                        </p>
                         {onSave && (
                             <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={handleSave} style={{ width: '100%', padding: '16px', backgroundColor: '#2D8B5F', color: 'white', border: 'none', borderRadius: '12px', fontSize: '16px', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                                 <Save size={20} />

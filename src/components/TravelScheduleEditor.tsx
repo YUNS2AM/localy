@@ -1,7 +1,8 @@
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Plus, Calendar, Users, ArrowRight, ChevronLeft, Save, Check } from 'lucide-react';
+import { X, Plus, Users, ArrowRight, ChevronLeft, Save, Check } from 'lucide-react';
 import { useState } from 'react';
 import { MapScreen } from './MapScreen';
+import { DateRangePicker } from './DateRangePicker';
 
 interface Place {
     id: number;
@@ -125,7 +126,7 @@ export function TravelScheduleEditor({ onClose, onComplete, initialData }: Trave
         // Map the places from the optimized schedule to the format expected by TravelData
         const formattedPlaces: Place[] = travelData.places.map((place: any, index: number) => ({
             id: Date.now() + index,
-            day: 1, // Will be distributed across days
+            day: selectedDay, // Assign to current selected day
             name: place.name,
             category: place.category || 'place',
             address: place.vicinity || '',
@@ -133,16 +134,8 @@ export function TravelScheduleEditor({ onClose, onComplete, initialData }: Trave
             lng: place.geometry?.location?.lng() || 0
         }));
 
-        const finalTravelData: TravelData = {
-            title: travelData.title,
-            destination: travelData.destination,
-            startDate: travelData.startDate,
-            endDate: travelData.endDate,
-            participants: travelData.participants,
-            places: formattedPlaces
-        };
-
-        onComplete(finalTravelData);
+        // Add places to the current day
+        setPlaces([...places, ...formattedPlaces]);
         setIsMapOpen(false);
     };
 
@@ -398,56 +391,18 @@ export function TravelScheduleEditor({ onClose, onComplete, initialData }: Trave
 
                                 {/* Dates - Unified Calendar */}
                                 <div>
-                                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#495057', marginBottom: '8px' }}>
+                                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#495057', marginBottom: '12px' }}>
                                         언제 가시나요?
                                     </label>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                        <div style={{ position: 'relative' }}>
-                                            <Calendar size={20} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#ADB5BD', zIndex: 1 }} />
-                                            <input
-                                                type="date"
-                                                value={startDate}
-                                                onChange={(e) => {
-                                                    const newStartDate = e.target.value;
-                                                    setStartDate(newStartDate);
-                                                    // If end date is before new start date, reset end date
-                                                    if (endDate && newStartDate > endDate) {
-                                                        setEndDate('');
-                                                    }
-                                                }}
-                                                min={new Date().toISOString().split('T')[0]}
-                                                placeholder="시작일"
-                                                style={{
-                                                    width: '100%',
-                                                    padding: '16px 16px 16px 48px',
-                                                    borderRadius: '16px',
-                                                    border: '1px solid #DEE2E6',
-                                                    fontSize: '16px',
-                                                    outline: 'none',
-                                                    fontFamily: 'inherit'
-                                                }}
-                                            />
-                                        </div>
-                                        <div style={{ position: 'relative' }}>
-                                            <Calendar size={20} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#ADB5BD', zIndex: 1 }} />
-                                            <input
-                                                type="date"
-                                                value={endDate}
-                                                onChange={(e) => setEndDate(e.target.value)}
-                                                min={startDate || new Date().toISOString().split('T')[0]}
-                                                placeholder="종료일"
-                                                style={{
-                                                    width: '100%',
-                                                    padding: '16px 16px 16px 48px',
-                                                    borderRadius: '16px',
-                                                    border: '1px solid #DEE2E6',
-                                                    fontSize: '16px',
-                                                    outline: 'none',
-                                                    fontFamily: 'inherit'
-                                                }}
-                                            />
-                                        </div>
-                                    </div>
+                                    <DateRangePicker
+                                        startDate={startDate}
+                                        endDate={endDate}
+                                        onDateSelect={(start, end) => {
+                                            setStartDate(start);
+                                            setEndDate(end);
+                                        }}
+                                        minDate={new Date().toISOString().split('T')[0]}
+                                    />
                                 </div>
 
                                 {/* Participants */}
@@ -541,47 +496,172 @@ export function TravelScheduleEditor({ onClose, onComplete, initialData }: Trave
                                 <div style={{ flex: 1, overflowY: 'auto' }}>
                                     {days.map((dayNum) => {
                                         const dayPlaces = getPlacesForDay(dayNum);
+
+                                        // Category colors mapping
+                                        const categoryColors: { [key: string]: string } = {
+                                            'place': '#2D8B5F',
+                                            'lodging': '#667eea',
+                                            'restaurant': '#f093fb',
+                                            'tourist_attraction': '#4facfe',
+                                            'cafe': '#43e97b',
+                                            'shopping_mall': '#fa709a'
+                                        };
+
+                                        const categoryLabels: { [key: string]: string } = {
+                                            'place': '장소',
+                                            'lodging': '숙소',
+                                            'restaurant': '맛집',
+                                            'tourist_attraction': '랜드마크',
+                                            'cafe': '카페',
+                                            'shopping_mall': '쇼핑'
+                                        };
+
                                         return (
                                             <div key={dayNum} style={{ marginBottom: '32px' }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-                                                    <h3 style={{ fontSize: '18px', fontWeight: 'bold' }}>Day {dayNum}</h3>
-                                                    <span style={{ fontSize: '14px', color: '#868E96' }}>{formatDate(dayNum)}</span>
+                                                <div style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '12px',
+                                                    marginBottom: '16px',
+                                                    padding: '12px 16px',
+                                                    backgroundColor: 'white',
+                                                    borderRadius: '12px',
+                                                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)'
+                                                }}>
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2D8B5F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                                                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                                                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                                                    </svg>
+                                                    <div>
+                                                        <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#2D8B5F', margin: 0 }}>Day {dayNum}</h3>
+                                                        <span style={{ fontSize: '12px', color: '#868E96' }}>{formatDate(dayNum)} · {dayPlaces.length}개 장소 방문 예정</span>
+                                                    </div>
                                                 </div>
 
-                                                <div style={{ paddingLeft: '16px', borderLeft: '2px solid #E9ECEF', marginLeft: '8px' }}>
-                                                    {dayPlaces.map((place, idx) => (
-                                                        <motion.div
-                                                            key={place.id}
-                                                            initial={{ opacity: 0, y: 10 }}
-                                                            animate={{ opacity: 1, y: 0 }}
-                                                            style={{
-                                                                background: 'white',
-                                                                padding: '16px',
-                                                                borderRadius: '16px',
-                                                                marginBottom: '12px',
-                                                                boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-                                                                display: 'flex',
-                                                                alignItems: 'center',
-                                                                gap: '12px'
-                                                            }}
-                                                        >
-                                                            <div style={{
-                                                                width: '24px', height: '24px',
-                                                                borderRadius: '50%',
-                                                                background: '#2D8B5F',
-                                                                color: 'white',
-                                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                                fontSize: '12px', fontWeight: 'bold',
-                                                                flexShrink: 0
-                                                            }}>
-                                                                {idx + 1}
+                                                <div style={{ position: 'relative', paddingLeft: '32px' }}>
+                                                    {/* Vertical timeline line */}
+                                                    {dayPlaces.length > 0 && (
+                                                        <div style={{
+                                                            position: 'absolute',
+                                                            left: '11px',
+                                                            top: 0,
+                                                            bottom: '80px',
+                                                            width: '2px',
+                                                            background: 'linear-gradient(180deg, #2D8B5F 0%, #4facfe 100%)'
+                                                        }} />
+                                                    )}
+
+                                                    {dayPlaces.map((place, idx) => {
+                                                        const color = categoryColors[place.category] || '#2D8B5F';
+                                                        const label = categoryLabels[place.category] || place.category || '장소';
+
+                                                        // Calculate estimated time (starting at 09:00, 90 minutes per place)
+                                                        const startHour = 9;
+                                                        const minutesPerPlace = 90;
+                                                        const totalMinutes = startHour * 60 + (idx * minutesPerPlace);
+                                                        const hours = Math.floor(totalMinutes / 60);
+                                                        const minutes = totalMinutes % 60;
+                                                        const time = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+
+                                                        return (
+                                                            <div key={place.id} style={{ marginBottom: '16px', position: 'relative' }}>
+                                                                {/* Timeline point */}
+                                                                <div style={{
+                                                                    position: 'absolute',
+                                                                    left: '-32px',
+                                                                    top: '8px',
+                                                                    width: '24px',
+                                                                    height: '24px',
+                                                                    borderRadius: '50%',
+                                                                    backgroundColor: color,
+                                                                    border: '3px solid white',
+                                                                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'center',
+                                                                    color: 'white',
+                                                                    fontSize: '11px',
+                                                                    fontWeight: 'bold'
+                                                                }}>
+                                                                    {idx + 1}
+                                                                </div>
+
+                                                                {/* Place card */}
+                                                                <motion.div
+                                                                    initial={{ opacity: 0, y: 10 }}
+                                                                    animate={{ opacity: 1, y: 0 }}
+                                                                    style={{
+                                                                        backgroundColor: 'white',
+                                                                        borderRadius: '12px',
+                                                                        padding: '16px',
+                                                                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+                                                                        borderLeft: `3px solid ${color}`
+                                                                    }}
+                                                                >
+                                                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                                                        <div style={{
+                                                                            display: 'inline-block',
+                                                                            padding: '4px 8px',
+                                                                            borderRadius: '6px',
+                                                                            backgroundColor: `${color}20`,
+                                                                            fontSize: '10px',
+                                                                            fontWeight: '600',
+                                                                            color: color
+                                                                        }}>
+                                                                            {label}
+                                                                        </div>
+                                                                        <div style={{ fontSize: '11px', color: '#999' }}>
+                                                                            60분
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#333', marginBottom: '2px' }}>
+                                                                        {time}
+                                                                    </div>
+
+                                                                    <h4 style={{ fontSize: '15px', fontWeight: '700', color: '#333', margin: '8px 0 4px 0' }}>
+                                                                        {place.name}
+                                                                    </h4>
+
+                                                                    {place.address && (
+                                                                        <p style={{
+                                                                            fontSize: '12px',
+                                                                            color: '#666',
+                                                                            margin: '4px 0',
+                                                                            display: 'flex',
+                                                                            alignItems: 'center',
+                                                                            gap: '4px'
+                                                                        }}>
+                                                                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                                                                <circle cx="12" cy="10" r="3"></circle>
+                                                                            </svg>
+                                                                            {place.address}
+                                                                        </p>
+                                                                    )}
+                                                                </motion.div>
+
+                                                                {/* Travel time between places (not for last place) */}
+                                                                {idx < dayPlaces.length - 1 && (
+                                                                    <div style={{
+                                                                        marginLeft: '8px',
+                                                                        marginTop: '8px',
+                                                                        marginBottom: '8px',
+                                                                        fontSize: '11px',
+                                                                        color: '#999',
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        gap: '4px'
+                                                                    }}>
+                                                                        <span>→</span>
+                                                                        <span>도보 {Math.floor(Math.random() * 10) + 5}분 · 0.5km</span>
+                                                                    </div>
+                                                                )}
                                                             </div>
-                                                            <div>
-                                                                <div style={{ fontWeight: '600', marginBottom: '2px' }}>{place.name}</div>
-                                                                <div style={{ fontSize: '12px', color: '#868E96' }}>{place.category}</div>
-                                                            </div>
-                                                        </motion.div>
-                                                    ))}
+                                                        );
+                                                    })}
 
                                                     <motion.button
                                                         whileHover={{ scale: 1.02 }}
@@ -597,7 +677,10 @@ export function TravelScheduleEditor({ onClose, onComplete, initialData }: Trave
                                                             fontSize: '14px',
                                                             fontWeight: '500',
                                                             cursor: 'pointer',
-                                                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            gap: '8px',
                                                             marginTop: '8px'
                                                         }}
                                                     >
@@ -647,6 +730,7 @@ export function TravelScheduleEditor({ onClose, onComplete, initialData }: Trave
                         onSelect={handlePlaceSelect}
                         onScheduleSave={handleScheduleSave}
                         initialLocation={destinationLocation}
+                        selectedDay={selectedDay}
                         tripData={{
                             destination,
                             participants,

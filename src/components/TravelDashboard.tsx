@@ -436,8 +436,29 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
                         onClose={() => setIsChatBotOpen(false)}
                         onComplete={(data) => {
                             console.log('Travel data received:', data);
-                            setTripData(data);
+
+                            // Create travel item from chatbot data
+                            const newTravel: TravelItem = {
+                                id: Date.now(),
+                                title: `${data.region} 여행`,
+                                destination: data.region,
+                                startDate: data.startDate,
+                                endDate: data.endDate,
+                                participants: data.participants,
+                                image: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)',
+                                places: data.schedules || []
+                            };
+
+                            // Save to travels list
+                            const userId = getUserId();
+                            const updatedTravels = [...travels, newTravel];
+                            setTravels(updatedTravels);
+                            localStorage.setItem(`travels_${userId}`, JSON.stringify(updatedTravels));
+
+                            // Close chatbot and show detail view
                             setIsChatBotOpen(false);
+                            setSelectedTravel(newTravel);
+                            setIsDetailViewOpen(true);
                         }}
                         onMapSelect={(location) => {
                             setSelectedLocation(location);

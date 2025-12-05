@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowLeft, Send, MapPin } from 'lucide-react';
 import catImage from '../assets/cat.jpg';
+import { DateRangePicker } from './DateRangePicker';
+import { MapScreen } from './MapScreen';
 
 interface TravelChatBotProps {
     onClose: () => void;
@@ -14,7 +16,8 @@ interface TravelData {
     startDate: string;
     endDate: string;
     region: string;
-    placeName?: string;  // 실제 선택한 여행지 이름
+    placeName?: string;
+    schedules?: Array<{ day: number; date: string; destination: string; places: any[] }>;
 }
 
 interface Message {
@@ -23,7 +26,7 @@ interface Message {
     timestamp: Date;
 }
 
-type Step = 'participants' | 'dates' | 'region' | 'recommendations' | 'complete';
+type Step = 'participants' | 'dates' | 'region' | 'day-selection' | 'complete';
 
 // 지역별 추천 여행지
 const regionRecommendations: Record<string, Array<{ name: string; address: string; lat: number; lng: number }>> = {
@@ -104,6 +107,13 @@ export function TravelChatBot({ onClose, onComplete, onMapSelect }: TravelChatBo
     const [endDate, setEndDate] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
+    // Day-by-day planning state
+    const [totalDays, setTotalDays] = useState(0);
+    const [currentDay, setCurrentDay] = useState(1);
+    const [daySchedules, setDaySchedules] = useState<Array<{ day: number; date: string; destination: string; places: any[] }>>([]);
+    const [isMapOpen, setIsMapOpen] = useState(false);
+    const [recommendations, setRecommendations] = useState<Array<{ name: string; address: string; lat: number; lng: number }>>([]);
+
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     };
@@ -147,48 +157,52 @@ export function TravelChatBot({ onClose, onComplete, onMapSelect }: TravelChatBo
                 );
 
                 if (matchedRegion) {
-                    const recommendations = regionRecommendations[matchedRegion];
+                    const recs = regionRecommendations[matchedRegion];
+                    setRecommendations(recs);
                     addMessage('cat', `${region} 여행이시군요! 좋은 선택이에요! 🎉`);
                     setTimeout(() => {
-                        addMessage('cat',
-                            <div>
-                                <div style={{ marginBottom: '12px', fontSize: '14px', fontWeight: '600' }}>
-                                    {region} 지역의 추천 여행지를 찾았어요!
-                                </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                    {recommendations.map((dest, index) => (
-                                        <motion.button
-                                            key={index}
-                                            whileHover={{ scale: 1.02 }}
-                                            whileTap={{ scale: 0.98 }}
-                                            onClick={() => setSelectedDestination(dest)}
-                                            style={{
-                                                padding: '14px 16px',
-                                                borderRadius: '12px',
-                                                border: '2px solid #2D8B5F',
-                                                backgroundColor: 'white',
-                                                cursor: 'pointer',
-                                                textAlign: 'left',
-                                                display: 'flex',
-                                                alignItems: 'flex-start',
-                                                gap: '10px'
-                                            }}
-                                        >
-                                            <MapPin size={20} color="#2D8B5F" style={{ marginTop: '2px', flexShrink: 0 }} />
-                                            <div style={{ flex: 1 }}>
-                                                <div style={{ fontSize: '15px', fontWeight: '600', color: '#333', marginBottom: '4px' }}>
-                                                    {dest.name}
+                        addMessage('cat', `Day 1의 여행지를 선택해주세요!`);
+                        setTimeout(() => {
+                            addMessage('cat',
+                                <div>
+                                    <div style={{ marginBottom: '12px', fontSize: '14px', fontWeight: '600' }}>
+                                        {region} 지역의 추천 여행지
+                                    </div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                        {recs.map((dest, index) => (
+                                            <motion.button
+                                                key={index}
+                                                whileHover={{ scale: 1.02 }}
+                                                whileTap={{ scale: 0.98 }}
+                                                onClick={() => handleDestinationSelect(dest)}
+                                                style={{
+                                                    padding: '14px 16px',
+                                                    borderRadius: '12px',
+                                                    border: '2px solid #2D8B5F',
+                                                    backgroundColor: 'white',
+                                                    cursor: 'pointer',
+                                                    textAlign: 'left',
+                                                    display: 'flex',
+                                                    alignItems: 'flex-start',
+                                                    gap: '10px'
+                                                }}
+                                            >
+                                                <MapPin size={20} color="#2D8B5F" style={{ marginTop: '2px', flexShrink: 0 }} />
+                                                <div style={{ flex: 1 }}>
+                                                    <div style={{ fontSize: '15px', fontWeight: '600', color: '#333', marginBottom: '4px' }}>
+                                                        {dest.name}
+                                                    </div>
+                                                    <div style={{ fontSize: '12px', color: '#666', lineHeight: '1.4' }}>
+                                                        {dest.address}
+                                                    </div>
                                                 </div>
-                                                <div style={{ fontSize: '12px', color: '#666', lineHeight: '1.4' }}>
-                                                    {dest.address}
-                                                </div>
-                                            </div>
-                                        </motion.button>
-                                    ))}
+                                            </motion.button>
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
-                        );
-                        setStep('recommendations');
+                            );
+                            setStep('day-selection');
+                        }, 500);
                     }, 800);
                 } else {
                     addMessage('cat', `${region}... 아직 제가 정보를 가지고 있지 않은 지역이에요. 😿\n다른 지역을 말씀해주시겠어요?`);
@@ -206,6 +220,13 @@ export function TravelChatBot({ onClose, onComplete, onMapSelect }: TravelChatBo
             return;
         }
 
+        // Calculate total days
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        const diffTime = Math.abs(end.getTime() - start.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+        setTotalDays(diffDays);
+
         addMessage('user', `${startDate} ~ ${endDate}`);
         setTravelData(prev => ({ ...prev, startDate, endDate }));
 
@@ -217,6 +238,132 @@ export function TravelChatBot({ onClose, onComplete, onMapSelect }: TravelChatBo
             }, 800);
         }, 500);
     };
+
+    const handleDestinationSelect = (destination: { name: string; address: string; lat: number; lng: number }) => {
+        setSelectedDestination(destination);
+        // Don't open MapScreen immediately - just show preview
+    };
+
+    const getDateForDay = (day: number) => {
+        if (!startDate) return '';
+        const date = new Date(startDate);
+        date.setDate(date.getDate() + day - 1);
+        const month = date.getMonth() + 1;
+        const dayOfMonth = date.getDate();
+        return `${month}월 ${dayOfMonth}일`;
+    };
+
+    const handleDayScheduleSave = (mapTravelData: any) => {
+        const start = new Date(startDate);
+        const currentDate = new Date(start);
+        currentDate.setDate(start.getDate() + currentDay - 1);
+        const dateStr = currentDate.toISOString().split('T')[0];
+
+        const daySchedule = {
+            day: currentDay,
+            date: dateStr,
+            destination: selectedDestination?.name || '',
+            places: mapTravelData.places || []
+        };
+
+        const updatedSchedules = [...daySchedules, daySchedule].sort((a, b) => a.day - b.day);
+        setDaySchedules(updatedSchedules);
+
+        setIsMapOpen(false);
+        setSelectedDestination(null);
+
+        // Move to next day or complete
+        if (currentDay < totalDays) {
+            const nextDay = currentDay + 1;
+            setCurrentDay(nextDay);
+
+            addMessage('user', `Day ${currentDay}: ${selectedDestination?.name}`);
+            setTimeout(() => {
+                addMessage('cat', `Day ${nextDay}의 여행지를 선택해주세요!`);
+
+                // Show recommendations again for next day
+                setTimeout(() => {
+                    addMessage('cat',
+                        <div>
+                            <div style={{ marginBottom: '12px', fontSize: '14px', fontWeight: '600' }}>
+                                {travelData.region} 지역의 추천 여행지
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                {recommendations.map((dest, index) => (
+                                    <motion.button
+                                        key={index}
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        onClick={() => handleDestinationSelect(dest)}
+                                        style={{
+                                            padding: '14px 16px',
+                                            borderRadius: '12px',
+                                            border: '2px solid #2D8B5F',
+                                            backgroundColor: 'white',
+                                            cursor: 'pointer',
+                                            textAlign: 'left',
+                                            display: 'flex',
+                                            alignItems: 'flex-start',
+                                            gap: '10px'
+                                        }}
+                                    >
+                                        <MapPin size={20} color="#2D8B5F" style={{ marginTop: '2px', flexShrink: 0 }} />
+                                        <div style={{ flex: 1 }}>
+                                            <div style={{ fontSize: '15px', fontWeight: '600', color: '#333', marginBottom: '4px' }}>
+                                                {dest.name}
+                                            </div>
+                                            <div style={{ fontSize: '12px', color: '#666', lineHeight: '1.4' }}>
+                                                {dest.address}
+                                            </div>
+                                        </div>
+                                    </motion.button>
+                                ))}
+                            </div>
+                        </div>
+                    );
+                }, 500);
+            }, 500);
+        } else {
+            // Last day completed - save trip
+            addMessage('user', `Day ${currentDay}: ${selectedDestination?.name}`);
+            setTimeout(() => {
+                addMessage('cat', '모든 날짜의 여행지가 선택되었어요! 멋진 여행이 될 것 같아요! 🎉');
+
+                setTimeout(() => {
+                    // Complete with all schedules
+                    if (travelData.participants && startDate && endDate && travelData.region) {
+                        onComplete({
+                            participants: travelData.participants,
+                            startDate,
+                            endDate,
+                            region: travelData.region,
+                            placeName: updatedSchedules[0]?.destination || '',
+                            schedules: updatedSchedules  // Pass all day schedules
+                        });
+                    }
+                    onClose();
+                }, 1500);
+            }, 800);
+        }
+    };
+
+    // Render MapScreen if open
+    if (isMapOpen && selectedDestination) {
+        const dayDate = getDateForDay(currentDay);
+        return (
+            <MapScreen
+                onClose={() => setIsMapOpen(false)}
+                onScheduleSave={handleDayScheduleSave}
+                initialLocation={selectedDestination}
+                tripData={{
+                    destination: selectedDestination.name,
+                    participants: travelData.participants || 1,
+                    startDate: dayDate,
+                    endDate: dayDate
+                }}
+            />
+        );
+    }
 
     return (
         <motion.div
@@ -245,6 +392,7 @@ export function TravelChatBot({ onClose, onComplete, onMapSelect }: TravelChatBo
                     width: '100%',
                     maxWidth: '480px',
                     height: '100%',
+                    maxHeight: '90vh',  // Limit height to 90% viewport on mobile
                     backgroundColor: '#FFF5E6',
                     borderRadius: '16px',
                     boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
@@ -322,7 +470,8 @@ export function TravelChatBot({ onClose, onComplete, onMapSelect }: TravelChatBo
                     gap: '12px',
                     background: 'rgba(255, 255, 255, 0.5)',
                     borderTopLeftRadius: '30px',
-                    borderTopRightRadius: '30px'
+                    borderTopRightRadius: '30px',
+                    minHeight: 0  // Allow flex item to shrink below content size
                 }}>
                     <AnimatePresence>
                         {messages.map((message, index) => (
@@ -431,24 +580,8 @@ export function TravelChatBot({ onClose, onComplete, onMapSelect }: TravelChatBo
                                     whileHover={{ scale: 1.02 }}
                                     whileTap={{ scale: 0.98 }}
                                     onClick={() => {
-                                        // 여행 데이터 완성 및 전달 (실제 선택한 여행지 이름 포함)
-                                        if (travelData.participants && travelData.startDate && travelData.endDate && travelData.region) {
-                                            onComplete({
-                                                participants: travelData.participants,
-                                                startDate: travelData.startDate,
-                                                endDate: travelData.endDate,
-                                                region: travelData.region,
-                                                placeName: selectedDestination.name  // 실제 선택한 장소 이름
-                                            });
-                                        }
-
-                                        if (onMapSelect) {
-                                            onMapSelect({
-                                                lat: selectedDestination.lat,
-                                                lng: selectedDestination.lng,
-                                                name: selectedDestination.name
-                                            });
-                                        }
+                                        // Open MapScreen when 선택 button is clicked
+                                        setIsMapOpen(true);
                                     }}
                                     style={{
                                         flex: 1,
@@ -473,86 +606,29 @@ export function TravelChatBot({ onClose, onComplete, onMapSelect }: TravelChatBo
                 {/* 입력 필드 / 날짜 선택 UI */}
                 <div style={{
                     padding: '16px 20px',
+                    paddingBottom: step === 'dates' ? '20px' : '16px',  // Extra bottom padding for dates
                     backgroundColor: 'white',
-                    borderTop: '1px solid #eee'
+                    borderTop: '1px solid #eee',
+                    maxHeight: step === 'dates' ? '50vh' : 'auto',  // Reduced from 60vh to 50vh
+                    overflowY: step === 'dates' ? 'auto' : 'visible',
+                    flexShrink: 0
                 }}>
                     {step === 'dates' ? (
                         // 날짜 선택 UI
                         <div style={{
                             display: 'flex',
                             flexDirection: 'column',
-                            gap: '16px'
+                            gap: '12px'
                         }}>
-                            <div style={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: '12px'
-                            }}>
-                                {/* 시작일 */}
-                                <div>
-                                    <label style={{
-                                        display: 'block',
-                                        marginBottom: '8px',
-                                        fontSize: '13px',
-                                        fontWeight: '600',
-                                        color: '#666'
-                                    }}>
-                                        시작일
-                                    </label>
-                                    <input
-                                        type="date"
-                                        value={startDate}
-                                        onChange={(e) => {
-                                            const newStartDate = e.target.value;
-                                            setStartDate(newStartDate);
-                                            // If end date is before new start date, reset end date
-                                            if (endDate && newStartDate > endDate) {
-                                                setEndDate('');
-                                            }
-                                        }}
-                                        min={new Date().toISOString().split('T')[0]}
-                                        style={{
-                                            width: '100%',
-                                            padding: '12px 16px',
-                                            borderRadius: '12px',
-                                            border: '2px solid #eee',
-                                            fontSize: '14px',
-                                            outline: 'none',
-                                            fontFamily: 'inherit',
-                                            cursor: 'pointer'
-                                        }}
-                                    />
-                                </div>
-
-                                {/* 종료일 */}
-                                <div>
-                                    <label style={{
-                                        display: 'block',
-                                        marginBottom: '8px',
-                                        fontSize: '13px',
-                                        fontWeight: '600',
-                                        color: '#666'
-                                    }}>
-                                        종료일
-                                    </label>
-                                    <input
-                                        type="date"
-                                        value={endDate}
-                                        onChange={(e) => setEndDate(e.target.value)}
-                                        min={startDate || new Date().toISOString().split('T')[0]}
-                                        style={{
-                                            width: '100%',
-                                            padding: '12px 16px',
-                                            borderRadius: '12px',
-                                            border: '2px solid #eee',
-                                            fontSize: '14px',
-                                            outline: 'none',
-                                            fontFamily: 'inherit',
-                                            cursor: 'pointer'
-                                        }}
-                                    />
-                                </div>
-                            </div>
+                            <DateRangePicker
+                                startDate={startDate}
+                                endDate={endDate}
+                                onDateSelect={(start, end) => {
+                                    setStartDate(start);
+                                    setEndDate(end);
+                                }}
+                                minDate={new Date().toISOString().split('T')[0]}
+                            />
 
                             {/* 확인 버튼 */}
                             <motion.button
@@ -577,6 +653,16 @@ export function TravelChatBot({ onClose, onComplete, onMapSelect }: TravelChatBo
                             >
                                 날짜 확인
                             </motion.button>
+                        </div>
+                    ) : step === 'day-selection' ? (
+                        // 여행지 선택 중 - 텍스트 입력 숨김
+                        <div style={{
+                            padding: '16px',
+                            textAlign: 'center',
+                            color: '#999',
+                            fontSize: '14px'
+                        }}>
+                            위 목록에서 여행지를 선택해주세요
                         </div>
                     ) : (
                         // 일반 텍스트 입력 UI

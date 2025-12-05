@@ -15,6 +15,7 @@ interface MapScreenProps {
     initialLocation?: { lat: number; lng: number; name: string } | null;
     onScheduleSave?: (travel: any) => void;
     onSelect?: (location: any) => void;
+    selectedDay?: number;  // Add this line
 }
 
 type CategoryType = 'lodging' | 'restaurant' | 'tourist_attraction' | 'cafe' | 'shopping_mall';
@@ -34,7 +35,7 @@ const categories: Category[] = [
     { id: 'shopping_mall', label: '쇼핑', icon: ShoppingBag, color: '#fa709a' }
 ];
 
-export function MapScreen({ tripData, onClose, onBack, initialLocation, onScheduleSave, onSelect }: MapScreenProps) {
+export function MapScreen({ tripData, onClose, onBack, initialLocation, onScheduleSave, onSelect, selectedDay }: MapScreenProps) {
     const mapRef = useRef<HTMLDivElement>(null);
     const mapInstanceRef = useRef<google.maps.Map | null>(null);
     const streetViewRef = useRef<HTMLDivElement>(null);
@@ -217,8 +218,17 @@ export function MapScreen({ tripData, onClose, onBack, initialLocation, onSchedu
                                 setSelectedPlaces(prev => {
                                     const exists = prev.some(p => p.place_id === place.place_id);
                                     if (exists) {
+                                        // 이미 선택된 장소는 선택 해제
                                         return prev.filter(p => p.place_id !== place.place_id);
                                     } else {
+                                        // 새로 선택하는 장소가 숙소인 경우 제한 확인
+                                        if (selectedCategory === 'lodging') {
+                                            const hasLodging = prev.some(p => p.category === 'lodging');
+                                            if (hasLodging) {
+                                                alert('숙소는 한 개만 선택할 수 있습니다.');
+                                                return prev; // 선택하지 않고 기존 상태 유지
+                                            }
+                                        }
                                         return [...prev, { ...place, category: selectedCategory }];
                                     }
                                 });
@@ -997,6 +1007,7 @@ export function MapScreen({ tripData, onClose, onBack, initialLocation, onSchedu
                         <OptimizedScheduleScreen
                             places={selectedPlaces}
                             tripData={tripData}
+                            selectedDay={selectedDay}
                             onClose={() => {
                                 setShowOptimizedSchedule(false);
                                 setShowSelectedPanel(true);
