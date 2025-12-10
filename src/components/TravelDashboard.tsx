@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'motion/react';
-import { Settings, Bell, MapPin, Plus, Calendar, Users, X } from 'lucide-react';
+import { Settings, Bell, MapPin, Plus, X } from 'lucide-react';
 import { TravelChatBot } from './TravelChatBot';
 import { MapScreen } from './MapScreen';
 import { TravelDetailView } from './TravelDetailView';
@@ -7,8 +7,8 @@ import { PasswordEditScreen } from './PasswordEditScreen';
 import { PersonalInfoEditScreen } from './PersonalInfoEditScreen';
 import { PersonaEditScreen } from './PersonaEditScreen';
 import { useState } from 'react';
-import { FloatingActionButton } from './FloatingActionButton';
 import { TravelScheduleEditor } from './TravelScheduleEditor';
+import { BottomNav } from './BottomNav';
 
 const myUrl = window.location.protocol + "//" + window.location.hostname + ":8000";
 
@@ -21,6 +21,15 @@ interface TravelItem {
     participants: number;
     destination: string;
     places: any[];
+}
+
+// 더미 여행 카드 인터페이스
+interface TravelCard {
+    id: number;
+    title: string;
+    destination: string;
+    date: string;
+    gradient: string;
 }
 
 interface Notification {
@@ -38,6 +47,31 @@ const sampleNotifications: Notification[] = [
         message: '제주 동백꽃 축제가 다음 주에 시작됩니다!',
         time: '5분 전',
         isRead: false
+    }
+];
+
+// 더미 여행 카드 데이터 (동적 렌더링용)
+const dummyTravelCards: TravelCard[] = [
+    {
+        id: 101,
+        title: '강남 여행',
+        destination: '서울 강남구',
+        date: '12.15 - 12.17',
+        gradient: 'linear-gradient(135deg, #E8D5F2 0%, #D5C6E8 100%)' // 부드러운 라벤더
+    },
+    {
+        id: 102,
+        title: '부산 여행',
+        destination: '부산광역시',
+        date: '12.20 - 12.23',
+        gradient: 'linear-gradient(135deg, #FFE5EC 0%, #FFC9D9 100%)' // 파스텔 핑크
+    },
+    {
+        id: 103,
+        title: '제주도 여행',
+        destination: '제주특별자치도',
+        date: '12.25 - 12.28',
+        gradient: 'linear-gradient(135deg, #D4E8F5 0%, #B8D4E8 100%)' // 파스텔 블루
     }
 ];
 
@@ -83,6 +117,10 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
         return saved ? JSON.parse(saved) : [];
     });
 
+    // 더미 카드 상태 관리 (동적 렌더링)
+    const [travelCards, setTravelCards] = useState<TravelCard[]>(dummyTravelCards);
+    const [currentCardIndex, setCurrentCardIndex] = useState(1); // 중앙 카드 인덱스
+
     // 일정 저장 핸들러 (중복 방지)
     const handleScheduleSave = (newTravel: TravelItem) => {
         // 중복 확인: 같은 destination과 날짜가 있는지 체크
@@ -104,12 +142,6 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
 
         // 저장 후 맵 닫기
         setIsMapOpen(false);
-    };
-
-
-    // 직접 추가하기 핸들러 (새로 추가)
-    const handleManualAdd = () => {
-        setIsScheduleEditorOpen(true);
     };
 
     const handleNewTravelSave = (travelData: any) => {
@@ -211,9 +243,10 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
         <div style={{
             width: '100%',
             minHeight: '100vh',
-            background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+            background: '#F8FCE8',
             display: 'flex',
-            flexDirection: 'column'
+            flexDirection: 'column',
+            paddingBottom: '80px' // 하단 네비게이션 공간 확보
         }}>
             {/* Header */}
             <motion.header
@@ -246,7 +279,7 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
                         width: '40px',
                         height: '40px',
                         borderRadius: '10px',
-                        background: 'linear-gradient(135deg, #2D8B5F 0%, #3BA474 100%)',
+                        background: 'linear-gradient(135deg, #C8E6C9 0%, #A5D6A7 100%)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center'
@@ -256,7 +289,7 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
                     <span style={{
                         fontSize: '20px',
                         fontWeight: 'bold',
-                        color: '#2D8B5F'
+                        color: '#81C784'
                     }}>
                         Localy
                     </span>
@@ -333,99 +366,153 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
                 width: '100%',
                 margin: '0 auto'
             }}>
+                {/* 광고 배너 영역 */}
                 <motion.div
                     initial={{ y: 20, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     transition={{ delay: 0.2 }}
                     style={{
-                        display: 'flex',
-                        justifyContent: 'center',
-                        marginBottom: '40px',
-                        // 버튼이 펼쳐질 공간 확보를 위해 zIndex와 position 설정이 필요할 수 있습니다.
+                        background: 'linear-gradient(135deg, #89C765 0%, #6FB558 100%)',
+                        borderRadius: '20px',
+                        padding: '40px 30px',
+                        marginBottom: '30px',
+                        textAlign: 'center',
+                        boxShadow: '0 6px 24px rgba(137, 199, 101, 0.3)',
                         position: 'relative',
-                        zIndex: 50
+                        overflow: 'hidden'
                     }}
                 >
-                    {/* ▼▼▼▼▼ 기존 버튼 삭제 ▼▼▼▼▼ */}
-                    {/* <motion.button
-                        whileHover={{ scale: 1.05, boxShadow: '0 8px 24px rgba(45, 139, 95, 0.3)' }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => setIsChatBotOpen(true)}
-                        style={{ ... }}
-                    >
-                        <Plus size={24} strokeWidth={3} />
-                        새 여행 추가하기
-                    </motion.button> */}
-                    {/* ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲ */}
+                    {/* 배경 장식 - 비행기 */}
+                    <div style={{
+                        position: 'absolute',
+                        top: '10px',
+                        right: '20px',
+                        fontSize: '48px',
+                        opacity: 0.2
+                    }}>✈️</div>
+                    <div style={{
+                        position: 'absolute',
+                        bottom: '10px',
+                        left: '20px',
+                        fontSize: '36px',
+                        opacity: 0.2
+                    }}>🚂</div>
 
-                    {/* ▼▼▼▼▼ 새 컴포넌트 추가 ▼▼▼▼▼ */}
-                    <FloatingActionButton
-                        onAIClick={() => setIsChatBotOpen(true)} // AI 버튼 클릭 시 챗봇 열기
-                        onMapClick={handleManualAdd}             // 지도 버튼 클릭 시 지도 열기
-                    />
-                    {/* ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲ */}
+                    <h1 style={{
+                        margin: '0 0 10px 0',
+                        fontSize: '28px',
+                        fontWeight: 'bold',
+                        color: 'white',
+                        position: 'relative',
+                        zIndex: 1
+                    }}>
+                        새로운 여행의 시작 ✨
+                    </h1>
+                    <p style={{
+                        margin: 0,
+                        fontSize: '15px',
+                        color: 'rgba(255, 255, 255, 0.9)',
+                        position: 'relative',
+                        zIndex: 1
+                    }}>
+                        로컬리와 함께 특별한 추억을 만들어보세요
+                    </p>
                 </motion.div>
 
-                {/* Travel List */}
-                <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-                    gap: '24px'
-                }}>
-                    {travels.map((travel) => (
-                        <motion.div
-                            key={travel.id}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.2 }}
-                            whileHover={{ y: -4 }}
-                            onClick={() => {
-                                setSelectedTravel(travel);
-                                setIsDetailViewOpen(true);
-                            }}
-                            style={{
-                                background: 'white',
-                                borderRadius: '16px',
-                                overflow: 'hidden',
-                                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-                                cursor: 'pointer'
-                            }}
-                        >
-                            <div style={{
-                                width: '100%',
-                                height: '200px',
-                                background: travel.image.startsWith('linear-gradient') ? travel.image : `url(${travel.image})`,
-                                backgroundSize: 'cover',
-                                backgroundPosition: 'center'
-                            }} />
-                            <div style={{ padding: '20px' }}>
-                                <h3 style={{
-                                    margin: '0 0 12px 0',
-                                    fontSize: '18px',
-                                    fontWeight: 'bold',
-                                    color: '#333'
-                                }}>
-                                    {travel.title}
-                                </h3>
-                                <div style={{
-                                    display: 'flex',
-                                    gap: '12px',
-                                    marginTop: '12px',
-                                    fontSize: '14px',
-                                    color: '#666'
-                                }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                        <Calendar size={16} />
-                                        {formatDateRange(travel.startDate, travel.endDate)}
+                {/* 여행 카드 슬라이더 (가로 스크롤) */}
+                <div>
+                    <h2 style={{
+                        fontSize: '20px',
+                        fontWeight: 'bold',
+                        color: '#333',
+                        marginBottom: '16px'
+                    }}>
+                        내 여행 계획 📅
+                    </h2>
+                    <div style={{
+                        display: 'flex',
+                        gap: '16px',
+                        overflowX: 'auto',
+                        scrollSnapType: 'x mandatory',
+                        paddingBottom: '20px',
+                        scrollbarWidth: 'none',
+                        msOverflowStyle: 'none'
+                    }}>
+                        {/* 동적 렌더링: travelCards 배열 사용 */}
+                        {travelCards.map((card, index) => {
+                            const isCenter = index === currentCardIndex;
+
+                            return (
+                                <motion.div
+                                    key={card.id}
+                                    initial={{ opacity: 0, scale: 0.9 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    whileHover={{ scale: 1.02, y: -4 }}
+                                    onClick={() => {
+                                        const travel = travels.find(t => t.id === card.id);
+                                        if (travel) {
+                                            setSelectedTravel(travel);
+                                            setIsDetailViewOpen(true);
+                                        }
+                                    }}
+                                    style={{
+                                        minWidth: '180px',
+                                        width: '180px',
+                                        height: '270px',
+                                        borderRadius: '16px',
+                                        background: card.gradient,
+                                        scrollSnapAlign: 'center',
+                                        cursor: 'pointer',
+                                        position: 'relative',
+                                        overflow: 'hidden',
+                                        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.15)'
+                                    }}
+                                >
+                                    {/* 배경 장식 - 기차 실루엣 */}
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: '10px',
+                                        right: '10px',
+                                        fontSize: '32px',
+                                        opacity: 0.15
+                                    }}>🚂</div>
+                                    <div style={{
+                                        position: 'absolute',
+                                        bottom: '80px',
+                                        left: '10px',
+                                        fontSize: '28px',
+                                        opacity: 0.15
+                                    }}>✈️</div>
+
+                                    {/* 카드 내용 */}
+                                    <div style={{
+                                        position: 'absolute',
+                                        bottom: 0,
+                                        left: 0,
+                                        right: 0,
+                                        padding: '20px',
+                                        background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 100%)'
+                                    }}>
+                                        <h3 style={{
+                                            margin: '0 0 8px 0',
+                                            fontSize: '18px',
+                                            fontWeight: 'bold',
+                                            color: 'white'
+                                        }}>
+                                            {card.title}
+                                        </h3>
+                                        <p style={{
+                                            margin: 0,
+                                            fontSize: '13px',
+                                            color: 'rgba(255, 255, 255, 0.9)'
+                                        }}>
+                                            📅 {card.date}
+                                        </p>
                                     </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                        <Users size={16} />
-                                        {travel.participants}명
-                                    </div>
-                                </div>
-                            </div>
-                        </motion.div>
-                    ))}
+                                </motion.div>
+                            );
+                        })}
+                    </div>
                 </div>
             </main>
 
@@ -990,6 +1077,17 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
                     />
                 )}
             </AnimatePresence>
+
+            {/* Bottom Navigation */}
+            <BottomNav
+                activeTab="home"
+                onHomeClick={() => {/* 홈 화면 유지 */ }}
+                onNotificationClick={() => setIsNotificationOpen(true)}
+                onAIScheduleClick={() => setIsChatBotOpen(true)}
+                onManualScheduleClick={() => setIsScheduleEditorOpen(true)}
+                onMyTravelsClick={() => {/* 내 여행 보기 - 현재 화면에 이미 표시됨 */ }}
+                onLoginClick={onLogoClick}
+            />
         </div >
     );
 }

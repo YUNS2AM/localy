@@ -2,11 +2,14 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import os
+from fastapi import WebSocket, WebSocketDisconnect
+
+
 
 # .env 파일에서 환경 변수 로드
 load_dotenv()
 
-from routers import auth, ai, langgraph_chat  # LangGraph 라우터 추가
+from routers import auth, langgraph_chat  # LangGraph 라우터 추가
 from core.database import engine, Base  # 1. engine과 Base 가져오기
 
 # 2. 서버 시작 때 테이블 생성 (없으면 만들고, 있으면 넘어감)
@@ -46,11 +49,22 @@ origins = [
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.websocket("/ws/{session_id}")
+async def websocket_endpoint(websocket: WebSocket, session_id: str):
+    await websocket.accept()
+    try:
+        while True:
+            data = await websocket.receive_text()
+            # 메시지 처리 로직
+            await websocket.send_text(f"Echo: {data}")
+    except WebSocketDisconnect:
+        print(f"WebSocket disconnected: {session_id}")
 
 # --- 라우터 예시 (나중에 파일 분리 시 routers 폴더로 이동) ---
 @app.get("/")
@@ -64,7 +78,6 @@ def health_check():
 
 # 라우터 등록
 app.include_router(auth.router)
-app.include_router(ai.router)  # AI 챗봇 라우터 등록
 app.include_router(langgraph_chat.router)  # LangGraph 멀티에이전트 라우터 등록
 
 
