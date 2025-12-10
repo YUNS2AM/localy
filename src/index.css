@@ -3,6 +3,13 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: 'PyeojinGothic';
+  src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2504-1@1.0/PyeojinGothic-Light.woff2') format('woff2');
+  font-weight: 300;
+  font-display: swap;
+}
+
 html,
 body,
 #root {
@@ -46,7 +53,7 @@ body {
     max-width: 100%;
     box-shadow: none;
   }
-  
+
   .app-container-wrapper {
     padding: 0;
   }
@@ -123,8 +130,8 @@ body {
 
   :root,
   :host {
-    --font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    --font-sans: "PyeojinGothic";
+    --font-mono: "PyeojinGothic";
     --color-gray-400: oklch(.707 .022 261.325);
     --color-gray-500: oklch(.551 .027 264.364);
     --color-gray-600: oklch(.446 .03 256.802);

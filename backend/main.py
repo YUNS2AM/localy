@@ -2,6 +2,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import os
+from fastapi import WebSocket, WebSocketDisconnect
+
+
 
 # .env 파일에서 환경 변수 로드
 load_dotenv()
@@ -46,11 +49,22 @@ origins = [
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.websocket("/ws/{session_id}")
+async def websocket_endpoint(websocket: WebSocket, session_id: str):
+    await websocket.accept()
+    try:
+        while True:
+            data = await websocket.receive_text()
+            # 메시지 처리 로직
+            await websocket.send_text(f"Echo: {data}")
+    except WebSocketDisconnect:
+        print(f"WebSocket disconnected: {session_id}")
 
 # --- 라우터 예시 (나중에 파일 분리 시 routers 폴더로 이동) ---
 @app.get("/")
