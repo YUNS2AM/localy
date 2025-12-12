@@ -30,8 +30,10 @@ export function BottomNav({
                 style={{
                     position: 'fixed',
                     bottom: 0,
-                    left: 0,
+                    left: '49.65%',
+                    transform: 'translateX(-50%)',
                     width: '100%',
+                    maxWidth: '480px',
                     height: '80px',
                     backgroundColor: 'rgba(255, 255, 255, 0.5)', // 반투명 흰색
                     backdropFilter: 'blur(24px)', // 강력한 블러
@@ -59,7 +61,7 @@ export function BottomNav({
 
                 {/* 오른쪽 메뉴 */}
                 <div className="flex gap-4 items-center">
-                    <NavIcon icon={<User size={24} />} label="마이페이지" isActive={activeTab === 'mypage'} onClick={onMyPageClick} />
+                    <NavIcon icon={<User size={24} />} label="MY" isActive={activeTab === 'mypage'} onClick={onMyPageClick} />
                     <NavIcon icon={<Settings size={24} />} label="설정" isActive={false} onClick={onSettingsClick} />
                 </div>
             </div>
@@ -69,7 +71,7 @@ export function BottomNav({
                 style={{
                     position: 'fixed',
                     bottom: '30px', // 바닥에서 약간 더 띄움
-                    left: '50%',
+                    left: '49.65%',
                     transform: 'translateX(-50%)', // 절대 중앙 정렬
                     zIndex: 100,
                     display: 'flex',

@@ -6,7 +6,7 @@ import { TravelDetailView } from './TravelDetailView';
 import { PasswordEditScreen } from './PasswordEditScreen';
 import { PersonalInfoEditScreen } from './PersonalInfoEditScreen';
 import { PersonaEditScreen } from './PersonaEditScreen';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { TravelScheduleEditor } from './TravelScheduleEditor';
 import { BottomNav } from './BottomNav';
 import { TripCardSlider } from './TripCardSlider';
@@ -33,6 +33,8 @@ interface TravelCard {
     date: string;
     gradient: string;
     shadowColor?: string; // 유색 그림자용
+    participants?: number;
+    image?: string;
 }
 
 interface Notification {
@@ -72,7 +74,7 @@ const sampleTravelItems: TravelItem[] = [
         startDate: '2025-12-20',
         endDate: '2025-12-23',
         participants: 3,
-        image: 'linear-gradient(135deg, #FFD1DC 0%, #FFABAB 100%)',
+        image: 'url(https://images.unsplash.com/photo-1536098561742-ca998e48cbcc?w=800&q=80)', // 부산 해운대
         places: []
     },
     {
@@ -82,7 +84,7 @@ const sampleTravelItems: TravelItem[] = [
         startDate: '2025-12-25',
         endDate: '2025-12-28',
         participants: 2,
-        image: 'linear-gradient(135deg, #C9F0DB 0%, #A8E6CF 100%)',
+        image: 'url(https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800&q=80)', // 제주 한라산
         places: []
     },
     {
@@ -92,7 +94,7 @@ const sampleTravelItems: TravelItem[] = [
         startDate: '2026-01-05',
         endDate: '2026-01-07',
         participants: 4,
-        image: 'linear-gradient(135deg, #E0C3FC 0%, #ADA7FF 100%)',
+        image: 'url(https://images.unsplash.com/photo-1583037189850-1921ae7c6c22?w=800&q=80)', // 강릉 겨울바다
         places: []
     }
 ];
@@ -208,11 +210,45 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
     });
 
     // 더미 카드 상태 관리 (동적 렌더링)
-    const [travelCards, setTravelCards] = useState<TravelCard[]>(dummyTravelCards);
+    const [travelCards, setTravelCards] = useState<TravelCard[]>([]);
     const [currentCardIndex, setCurrentCardIndex] = useState(1); // 중앙 카드 인덱스
 
-    // 일정 저장 핸들러 (중복 방지)
-    const handleScheduleSave = (newTravel: TravelItem) => {
+    // travels 상태를 travelCards로 변환
+    useEffect(() => {
+        const gradients = [
+            { gradient: 'linear-gradient(135deg, #E0C3FC 0%, #ADA7FF 100%)', shadowColor: 'rgba(173, 167, 255, 0.35)' },
+            { gradient: 'linear-gradient(135deg, #FFD1DC 0%, #FFABAB 100%)', shadowColor: 'rgba(255, 171, 171, 0.35)' },
+            { gradient: 'linear-gradient(135deg, #C9F0DB 0%, #A8E6CF 100%)', shadowColor: 'rgba(168, 230, 207, 0.35)' },
+            { gradient: 'linear-gradient(135deg, #FFF9C4 0%, #FFE082 100%)', shadowColor: 'rgba(255, 224, 130, 0.35)' },
+            { gradient: 'linear-gradient(135deg, #E1BEE7 0%, #CE93D8 100%)', shadowColor: 'rgba(206, 147, 216, 0.35)' },
+        ];
+
+        const cards: TravelCard[] = travels.map((travel, index) => {
+            const colorScheme = gradients[index % gradients.length];
+
+            // travel.image가 url()로 시작하면 그대로 사용, 아니면 gradient 사용
+            let finalImage = colorScheme.gradient;
+            if (travel.image && travel.image.startsWith('url(')) {
+                finalImage = travel.image;
+            }
+
+            return {
+                id: travel.id,
+                title: `${travel.destination} 여행`,
+                destination: travel.destination,
+                date: formatDateRange(travel.startDate, travel.endDate),
+                gradient: colorScheme.gradient,
+                shadowColor: colorScheme.shadowColor,
+                participants: travel.participants,
+                image: finalImage
+            };
+        });
+        setTravelCards(cards);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [travels]);
+
+    // 일정 저장 핸들러 (중복 방지 + 이미지 자동 검색)
+    const handleScheduleSave = async (newTravel: TravelItem) => {
         // 중복 확인: 같은 destination과 날짜가 있는지 체크
         const isDuplicate = travels.some(travel =>
             travel.destination === newTravel.destination &&
@@ -225,8 +261,42 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
             return;
         }
 
+        // 이미지가 없으면 백엔드 API로 랜드마크 이미지 검색
+        let travelWithImage = { ...newTravel };
+        if (!newTravel.image || newTravel.image.startsWith('linear-gradient')) {
+            console.log('🖼️ Fetching landmark image for:', newTravel.destination);
+            try {
+                const response = await fetch(`${myUrl}/api/search/landmark-image`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ destination: newTravel.destination })
+                });
+
+                console.log('API Response status:', response.status);
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('API Response data:', data);
+                    if (data.image_url) {
+                        travelWithImage.image = `url(${data.image_url})`;
+                        console.log('✅ Image URL set:', travelWithImage.image);
+                    } else {
+                        console.log('⚠️ No image_url in response');
+                    }
+                } else {
+                    console.error('❌ API request failed:', response.statusText);
+                }
+            } catch (error) {
+                console.error('❌ Failed to fetch landmark image:', error);
+                // 실패해도 계속 진행 (gradient 사용)
+            }
+        } else {
+            console.log('Image already exists:', newTravel.image);
+        }
+
         const userId = getUserId();
-        const updatedTravels = [...travels, newTravel];
+        const updatedTravels = [...travels, travelWithImage];
         setTravels(updatedTravels);
         localStorage.setItem(`travels_${userId}`, JSON.stringify(updatedTravels));
 
@@ -234,7 +304,7 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
         setIsMapOpen(false);
     };
 
-    const handleNewTravelSave = (travelData: any) => {
+    const handleNewTravelSave = async (travelData: any) => {
         const newTravel: TravelItem = {
             id: Date.now(),
             title: travelData.title,
@@ -246,8 +316,38 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
             places: travelData.places
         };
 
+        // 이미지 자동 검색
+        let travelWithImage = { ...newTravel };
+        console.log('🖼️ Fetching landmark image for:', newTravel.destination);
+        try {
+            const response = await fetch(`${myUrl}/api/search/landmark-image`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ destination: newTravel.destination })
+            });
+
+            console.log('API Response status:', response.status);
+            if (response.ok) {
+                const data = await response.json();
+                console.log('API Response data:', data);
+                if (data.image_url) {
+                    travelWithImage.image = `url(${data.image_url})`;
+                    console.log('✅ Image URL set:', travelWithImage.image);
+                } else {
+                    console.log('⚠️ No image_url in response');
+                }
+            } else {
+                console.error('❌ API request failed:', response.statusText);
+            }
+        } catch (error) {
+            console.error('❌ Failed to fetch landmark image:', error);
+            // 실패해도 계속 진행 (gradient 사용)
+        }
+
         const userId = getUserId();
-        const updatedTravels = [...travels, newTravel];
+        const updatedTravels = [...travels, travelWithImage];
         setTravels(updatedTravels);
         localStorage.setItem(`travels_${userId}`, JSON.stringify(updatedTravels));
         setIsScheduleEditorOpen(false);
@@ -832,7 +932,7 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
                     isChatBotOpen && (
                         <TravelChatBot
                             onClose={() => setIsChatBotOpen(false)}
-                            onComplete={(data) => {
+                            onComplete={async (data) => {
                                 console.log('Travel data received:', data);
 
                                 // Create travel item from chatbot data
@@ -847,15 +947,45 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
                                     places: data.schedules || []
                                 };
 
+                                // 이미지 자동 검색
+                                let travelWithImage = { ...newTravel };
+                                console.log('🖼️ Fetching landmark image for:', newTravel.destination);
+                                try {
+                                    const response = await fetch(`${myUrl}/api/search/landmark-image`, {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                        },
+                                        body: JSON.stringify({ destination: newTravel.destination })
+                                    });
+
+                                    console.log('API Response status:', response.status);
+                                    if (response.ok) {
+                                        const responseData = await response.json();
+                                        console.log('API Response data:', responseData);
+                                        if (responseData.image_url) {
+                                            travelWithImage.image = `url(${responseData.image_url})`;
+                                            console.log('✅ Image URL set:', travelWithImage.image);
+                                        } else {
+                                            console.log('⚠️ No image_url in response');
+                                        }
+                                    } else {
+                                        console.error('❌ API request failed:', response.statusText);
+                                    }
+                                } catch (error) {
+                                    console.error('❌ Failed to fetch landmark image:', error);
+                                    // 실패해도 계속 진행 (gradient 사용)
+                                }
+
                                 // Save to travels list
                                 const userId = getUserId();
-                                const updatedTravels = [...travels, newTravel];
+                                const updatedTravels = [...travels, travelWithImage];
                                 setTravels(updatedTravels);
                                 localStorage.setItem(`travels_${userId}`, JSON.stringify(updatedTravels));
 
                                 // Close chatbot and show detail view
                                 setIsChatBotOpen(false);
-                                setSelectedTravel(newTravel);
+                                setSelectedTravel(travelWithImage);
                                 setIsDetailViewOpen(true);
                             }}
                             onMapSelect={(location) => {
@@ -891,7 +1021,7 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
                             style={{
                                 position: 'fixed',
                                 top: 0,
-                                left: '50%',
+                                left: '49.65%',
                                 transform: 'translateX(-50%)',
                                 width: '100%',
                                 maxWidth: '480px',
@@ -996,7 +1126,7 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
                             style={{
                                 position: 'fixed',
                                 top: 0,
-                                left: '50%',
+                                left: '49.65%',
                                 transform: 'translateX(-50%)',
                                 width: '100%',
                                 maxWidth: '480px',
@@ -1044,46 +1174,7 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
                             </div>
 
                             <div style={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
-                                {/* 환영 메시지 */}
-                                <div style={{
-                                    backgroundColor: '#FFF5E6',
-                                    borderRadius: '12px',
-                                    padding: '20px',
-                                    marginBottom: '30px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '12px'
-                                }}>
-                                    <div style={{
-                                        width: '48px',
-                                        height: '48px',
-                                        borderRadius: '50%',
-                                        background: 'linear-gradient(135deg, #FFE5AE 0%, #FFD580 100%)',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center'
-                                    }}>
-                                        <Hand size={26} color="#FF9800" strokeWidth={2} />
-                                    </div>
-                                    <span style={{
-                                        fontSize: '16px',
-                                        fontWeight: '600',
-                                        color: '#2D8B5F'
-                                    }}>
-                                        {userName}님 반가워요!
-                                    </span>
-                                </div>
-
                                 {/* 앱 설정 */}
-                                <h3 style={{
-                                    margin: '0 0 12px 0',
-                                    fontSize: '14px',
-                                    fontWeight: '600',
-                                    color: '#999'
-                                }}>
-                                    앱 설정
-                                </h3>
-
                                 <div style={{
                                     backgroundColor: 'white',
                                     borderRadius: '12px',
@@ -1200,6 +1291,167 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
                                     </div>
                                 </div>
 
+                                {/* 고객센터 */}
+                                <div style={{
+                                    backgroundColor: 'white',
+                                    borderRadius: '12px',
+                                    marginBottom: '20px',
+                                    overflow: 'hidden'
+                                }}>
+                                    <button style={{
+                                        width: '100%',
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center',
+                                        padding: '16px 20px',
+                                        border: 'none',
+                                        backgroundColor: 'transparent',
+                                        cursor: 'pointer',
+                                        fontSize: '15px',
+                                        color: '#333',
+                                        textAlign: 'left'
+                                    }}>
+                                        고객센터
+                                        <span style={{ color: '#ccc' }}>›</span>
+                                    </button>
+                                </div>
+
+                                {/* 로그아웃 버튼 */}
+                                <motion.button
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                    onClick={handleLogout}
+                                    style={{
+                                        width: '100%',
+                                        padding: '16px',
+                                        borderRadius: '12px',
+                                        border: 'none',
+                                        backgroundColor: '#f1f3f5',
+                                        color: '#666',
+                                        fontSize: '15px',
+                                        fontWeight: '600',
+                                        cursor: 'pointer',
+                                        marginBottom: '12px'
+                                    }}
+                                >
+                                    로그아웃
+                                </motion.button>
+
+                                {/* 회원탈퇴 버튼 */}
+                                <motion.button
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                    onClick={handleWithdraw}
+                                    style={{
+                                        width: '100%',
+                                        padding: '16px',
+                                        borderRadius: '12px',
+                                        border: 'none',
+                                        backgroundColor: '#FFEBEE',
+                                        color: '#E84A5F',
+                                        fontSize: '15px',
+                                        fontWeight: '600',
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    회원탈퇴
+                                </motion.button>
+                            </div>
+                        </motion.div>
+                    )
+                }
+            </AnimatePresence >
+
+            {/* My Page Panel */}
+            <AnimatePresence>
+                {
+                    isMyPageOpen && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.3 }}
+                            style={{
+                                position: 'fixed',
+                                top: 0,
+                                left: '49.65%',
+                                transform: 'translateX(-50%)',
+                                width: '100%',
+                                maxWidth: '480px',
+                                height: '100vh',
+                                backgroundColor: 'white',
+                                zIndex: 1000,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                boxShadow: '0 0 20px rgba(0, 0, 0, 0.1)'
+                            }}
+                        >
+                            <div style={{
+                                padding: '20px 30px',
+                                borderBottom: '1px solid #eee',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center'
+                            }}>
+                                <h2 style={{
+                                    fontSize: '24px',
+                                    fontWeight: 'bold',
+                                    color: '#2D8B5F',
+                                    margin: 0
+                                }}>
+                                    마이페이지
+                                </h2>
+                                <motion.button
+                                    whileHover={{ scale: 1.1 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={() => setIsMyPageOpen(false)}
+                                    style={{
+                                        width: '40px',
+                                        height: '40px',
+                                        borderRadius: '50%',
+                                        border: 'none',
+                                        backgroundColor: '#f8f9fa',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center'
+                                    }}
+                                >
+                                    <X size={20} color="#666" />
+                                </motion.button>
+                            </div>
+
+                            <div style={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
+                                {/* 환영 메시지 */}
+                                <div style={{
+                                    backgroundColor: '#FFF5E6',
+                                    borderRadius: '12px',
+                                    padding: '20px',
+                                    marginBottom: '30px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '12px'
+                                }}>
+                                    <div style={{
+                                        width: '48px',
+                                        height: '48px',
+                                        borderRadius: '50%',
+                                        background: 'linear-gradient(135deg, #FFE5AE 0%, #FFD580 100%)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center'
+                                    }}>
+                                        <Hand size={26} color="#FF9800" strokeWidth={2} />
+                                    </div>
+                                    <span style={{
+                                        fontSize: '16px',
+                                        fontWeight: '600',
+                                        color: '#2D8B5F'
+                                    }}>
+                                        {userName}님 반가워요!
+                                    </span>
+                                </div>
+
                                 {/* 계정 관리 */}
                                 <h3 style={{
                                     margin: '0 0 12px 0',
@@ -1281,72 +1533,6 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
                                         <span style={{ color: '#ccc' }}>›</span>
                                     </button>
                                 </div>
-
-                                {/* 고객센터 */}
-                                <div style={{
-                                    backgroundColor: 'white',
-                                    borderRadius: '12px',
-                                    marginBottom: '20px',
-                                    overflow: 'hidden'
-                                }}>
-                                    <button style={{
-                                        width: '100%',
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
-                                        alignItems: 'center',
-                                        padding: '16px 20px',
-                                        border: 'none',
-                                        backgroundColor: 'transparent',
-                                        cursor: 'pointer',
-                                        fontSize: '15px',
-                                        color: '#333',
-                                        textAlign: 'left'
-                                    }}>
-                                        고객센터
-                                        <span style={{ color: '#ccc' }}>›</span>
-                                    </button>
-                                </div>
-
-                                {/* 로그아웃 버튼 */}
-                                <motion.button
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
-                                    onClick={handleLogout}
-                                    style={{
-                                        width: '100%',
-                                        padding: '16px',
-                                        borderRadius: '12px',
-                                        border: 'none',
-                                        backgroundColor: '#f1f3f5',
-                                        color: '#666',
-                                        fontSize: '15px',
-                                        fontWeight: '600',
-                                        cursor: 'pointer',
-                                        marginBottom: '12px'
-                                    }}
-                                >
-                                    로그아웃
-                                </motion.button>
-
-                                {/* 회원탈퇴 버튼 */}
-                                <motion.button
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
-                                    onClick={handleWithdraw}
-                                    style={{
-                                        width: '100%',
-                                        padding: '16px',
-                                        borderRadius: '12px',
-                                        border: 'none',
-                                        backgroundColor: '#FFEBEE',
-                                        color: '#E84A5F',
-                                        fontSize: '15px',
-                                        fontWeight: '600',
-                                        cursor: 'pointer'
-                                    }}
-                                >
-                                    회원탈퇴
-                                </motion.button>
                             </div>
                         </motion.div>
                     )
@@ -1426,7 +1612,7 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
                 style={{
                     position: 'fixed',
                     bottom: '120px',
-                    right: '30px',
+                    right: 'max(30px, calc(50% - 210px))', // 모바일에서는 30px, 웹에서는 컨텐츠 영역 내부
                     width: '70px',
                     height: '70px',
                     borderRadius: '50%',

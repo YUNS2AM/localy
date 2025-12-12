@@ -13,6 +13,8 @@ interface TripCardProps {
     date: string;
     gradient: string;
     shadowColor?: string; // 유색 그림자용
+    participants?: number;
+    image?: string;
 }
 
 interface TripCardSliderProps {
@@ -61,14 +63,16 @@ export function TripCardSlider({ cards, onCardClick }: TripCardSliderProps) {
                                 }}
                                 transition={{ duration: 0.4 }}
                             >
-                                {/* [핵심 수정] 배경색 버그 해결: style로 직접 주입 */}
                                 <div
                                     style={{
                                         width: '100%',
-                                        height: '580px',
-                                        borderRadius: '32px', // 부드러운 모서리
-                                        background: card.gradient, // CSS gradient 직접 적용
-                                        boxShadow: `0 20px 40px -10px ${card.shadowColor || 'rgba(0, 0, 0, 0.15)'}`, // 유색 그림자
+                                        height: '320px',
+                                        borderRadius: '32px',
+                                        backgroundImage: (card.image && card.image.startsWith('url(')) ? card.image : card.gradient,
+                                        backgroundSize: 'cover',
+                                        backgroundPosition: 'center',
+                                        backgroundRepeat: 'no-repeat',
+                                        boxShadow: `0 20px 40px -10px ${card.shadowColor || 'rgba(0, 0, 0, 0.15)'}`,
                                         border: isActive ? '4px solid white' : '4px solid transparent',
                                         position: 'relative',
                                         overflow: 'hidden',
@@ -82,16 +86,21 @@ export function TripCardSlider({ cards, onCardClick }: TripCardSliderProps) {
                                     <div
                                         className="absolute bottom-0 left-0 right-0 p-6"
                                         style={{
-                                            background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.5) 70%, transparent 100%)',
+                                            background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(255, 255, 255, 0.5) 70%, transparent 100%)',
                                             zIndex: 10
                                         }}
                                     >
                                         <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'white', marginBottom: '0.5rem', textShadow: '2px 2px 4px rgba(0,0,0,0.9)' }}>
-                                            {card.title}
+                                            {card.destination}
                                         </h3>
-                                        <p style={{ fontSize: '1rem', fontWeight: '500', color: 'white', textShadow: '1px 1px 3px rgba(0,0,0,0.9)' }}>
+                                        <p style={{ fontSize: '1rem', fontWeight: '500', color: 'white', marginBottom: '0.5rem', textShadow: '1px 1px 3px rgba(0,0,0,0.9)' }}>
                                             {card.date}
                                         </p>
+                                        {card.participants && (
+                                            <p style={{ fontSize: '0.9rem', fontWeight: '400', color: 'rgba(255,255,255,0.9)', textShadow: '1px 1px 3px rgba(0,0,0,0.9)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                <span>👥</span> {card.participants}명
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
                             </motion.div>

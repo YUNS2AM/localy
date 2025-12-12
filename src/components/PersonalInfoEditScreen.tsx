@@ -326,7 +326,7 @@ export function PersonalInfoEditScreen({ onClose }: PersonalInfoEditScreenProps)
                 style={{
                     position: 'fixed',
                     top: 0,
-                    left: '50%',
+                    left: '49.65%',
                     transform: 'translateX(-50%)',
                     width: '100%',
                     maxWidth: '480px',
