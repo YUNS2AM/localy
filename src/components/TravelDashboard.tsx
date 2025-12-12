@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'motion/react';
-import { Settings, Bell, MapPin, Plus, X, Plane, Train, Globe, Sparkles, Hand } from 'lucide-react';
+import { Settings, Bell, MapPin, Plus, X, Plane, Train, Globe, Sparkles, Hand, Calendar, Lightbulb, BarChart3, Building2, Home, TreePine, Mountain, Wallet, Backpack, Camera } from 'lucide-react';
 import { TravelChatBot } from './TravelChatBot';
 import { MapScreen } from './MapScreen';
 import { TravelDetailView } from './TravelDetailView';
@@ -104,7 +104,7 @@ const popularDestinations: PopularDestination[] = [
         name: '경주 불국사',
         location: '경상북도 경주시',
         gradient: 'linear-gradient(135deg, #FFF4E1 0%, #FFE5B4 100%)',
-        image: '🏯',
+        image: 'Building2',
         description: '천년 고도의 아름다운 사찰'
     },
     {
@@ -112,7 +112,7 @@ const popularDestinations: PopularDestination[] = [
         name: '남해 독일마을',
         location: '경상남도 남해군',
         gradient: 'linear-gradient(135deg, #E8F4F8 0%, #BDE0FE 100%)',
-        image: '🏘️',
+        image: 'Home',
         description: '이국적인 풍경의 해안 마을'
     },
     {
@@ -120,7 +120,7 @@ const popularDestinations: PopularDestination[] = [
         name: '담양 죽녹원',
         location: '전라남도 담양군',
         gradient: 'linear-gradient(135deg, #E8F8E8 0%, #C1E1C1 100%)',
-        image: '🎋',
+        image: 'TreePine',
         description: '시원한 대나무 숲길'
     },
     {
@@ -128,7 +128,7 @@ const popularDestinations: PopularDestination[] = [
         name: '속초 설악산',
         location: '강원도 속초시',
         gradient: 'linear-gradient(135deg, #FFF0F5 0%, #FFD7E5 100%)',
-        image: '⛰️',
+        image: 'Mountain',
         description: '웅장한 산과 아름다운 단풍'
     }
 ];
@@ -461,11 +461,15 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
                     <h2 style={{
                         fontSize: '20px',
                         fontWeight: 'bold',
-                        color: '#4A5A40', // 텍스트 색상: 쑥색 (눈 편안함)
+                        color: '#4A5A40',
                         marginBottom: '10px',
-                        paddingLeft: '10px'
+                        paddingLeft: '10px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
                     }}>
-                        내 여행 계획 🗓️
+                        내 여행 계획
+                        <Calendar size={20} strokeWidth={2.5} />
                     </h2>
                     {/* 카드 슬라이더 컴포넌트 */}
                     <TripCardSlider
@@ -492,9 +496,13 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
                         fontWeight: 'bold',
                         color: '#4A5A40',
                         marginBottom: '16px',
-                        paddingLeft: '10px'
+                        paddingLeft: '10px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
                     }}>
-                        인기 여행지 🏞️
+                        인기 여행지
+                        <MapPin size={20} strokeWidth={2.5} />
                     </h2>
                     <div style={{
                         display: 'grid',
@@ -519,8 +527,11 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
                                     backdropFilter: 'blur(10px)'
                                 }}
                             >
-                                <div style={{ fontSize: '48px', marginBottom: '8px' }}>
-                                    {destination.image}
+                                <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'center' }}>
+                                    {destination.image === 'Building2' && <Building2 size={48} strokeWidth={1.5} color="#8B6C42" />}
+                                    {destination.image === 'Home' && <Home size={48} strokeWidth={1.5} color="#5A9FD4" />}
+                                    {destination.image === 'TreePine' && <TreePine size={48} strokeWidth={1.5} color="#6B8E5D" />}
+                                    {destination.image === 'Mountain' && <Mountain size={48} strokeWidth={1.5} color="#9B7C9F" />}
                                 </div>
                                 <h3 style={{
                                     fontSize: '16px',
@@ -562,9 +573,13 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
                         fontWeight: 'bold',
                         color: '#4A5A40',
                         marginBottom: '16px',
-                        paddingLeft: '10px'
+                        paddingLeft: '10px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
                     }}>
-                        여행 팁 💡
+                        여행 팁
+                        <Lightbulb size={20} strokeWidth={2.5} />
                     </h2>
                     <div style={{
                         display: 'flex',
@@ -596,10 +611,9 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
                                     background: 'linear-gradient(135deg, #FFD580 0%, #FFBB33 100%)',
                                     display: 'flex',
                                     alignItems: 'center',
-                                    justifyContent: 'center',
-                                    fontSize: '20px'
+                                    justifyContent: 'center'
                                 }}>
-                                    💰
+                                    <Wallet size={20} color="#fff" strokeWidth={2.5} />
                                 </div>
                                 <h3 style={{
                                     fontSize: '16px',
@@ -644,10 +658,9 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
                                     background: 'linear-gradient(135deg, #A8E6CF 0%, #7FD3A6 100%)',
                                     display: 'flex',
                                     alignItems: 'center',
-                                    justifyContent: 'center',
-                                    fontSize: '20px'
+                                    justifyContent: 'center'
                                 }}>
-                                    🎒
+                                    <Backpack size={20} color="#fff" strokeWidth={2.5} />
                                 </div>
                                 <h3 style={{
                                     fontSize: '16px',
@@ -692,10 +705,9 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
                                     background: 'linear-gradient(135deg, #FFC1DC 0%, #FFB3D9 100%)',
                                     display: 'flex',
                                     alignItems: 'center',
-                                    justifyContent: 'center',
-                                    fontSize: '20px'
+                                    justifyContent: 'center'
                                 }}>
-                                    📸
+                                    <Camera size={20} color="#fff" strokeWidth={2.5} />
                                 </div>
                                 <h3 style={{
                                     fontSize: '16px',
@@ -731,9 +743,13 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
                         fontWeight: 'bold',
                         color: '#4A5A40',
                         marginBottom: '16px',
-                        paddingLeft: '10px'
+                        paddingLeft: '10px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
                     }}>
-                        나의 여행 통계 📊
+                        나의 여행 통계
+                        <BarChart3 size={20} strokeWidth={2.5} />
                     </h2>
                     <div style={{
                         background: 'linear-gradient(135deg, rgba(137, 199, 101, 0.15) 0%, rgba(111, 181, 88, 0.1) 100%)',
