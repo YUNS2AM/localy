@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'motion/react';
-import { Settings, Bell, MapPin, Plus, X } from 'lucide-react';
+import { Settings, Bell, MapPin, Plus, X, Plane, Train, Globe, Sparkles, Hand } from 'lucide-react';
 import { TravelChatBot } from './TravelChatBot';
 import { MapScreen } from './MapScreen';
 import { TravelDetailView } from './TravelDetailView';
@@ -9,6 +9,8 @@ import { PersonaEditScreen } from './PersonaEditScreen';
 import { useState } from 'react';
 import { TravelScheduleEditor } from './TravelScheduleEditor';
 import { BottomNav } from './BottomNav';
+import { TripCardSlider } from './TripCardSlider';
+import chatbotAvatar from '../assets/chatbot.jpg';
 
 const myUrl = window.location.protocol + "//" + window.location.hostname + ":8000";
 
@@ -30,6 +32,7 @@ interface TravelCard {
     destination: string;
     date: string;
     gradient: string;
+    shadowColor?: string; // 유색 그림자용
 }
 
 interface Notification {
@@ -38,6 +41,16 @@ interface Notification {
     message: string;
     time: string;
     isRead: boolean;
+}
+
+// 인기 여행지 인터페이스
+interface PopularDestination {
+    id: number;
+    name: string;
+    location: string;
+    image: string;
+    gradient: string;
+    description: string;
 }
 
 const sampleNotifications: Notification[] = [
@@ -50,31 +63,106 @@ const sampleNotifications: Notification[] = [
     }
 ];
 
-// 더미 여행 카드 데이터 (동적 렌더링용)
+// 하드코딩된 샘플 여행 데이터
+const sampleTravelItems: TravelItem[] = [
+    {
+        id: 1001,
+        title: '부산 해운대 여행',
+        destination: '부산광역시',
+        startDate: '2025-12-20',
+        endDate: '2025-12-23',
+        participants: 3,
+        image: 'linear-gradient(135deg, #FFD1DC 0%, #FFABAB 100%)',
+        places: []
+    },
+    {
+        id: 1002,
+        title: '제주 한라산 트레킹',
+        destination: '제주특별자치도',
+        startDate: '2025-12-25',
+        endDate: '2025-12-28',
+        participants: 2,
+        image: 'linear-gradient(135deg, #C9F0DB 0%, #A8E6CF 100%)',
+        places: []
+    },
+    {
+        id: 1003,
+        title: '강릉 겨울바다',
+        destination: '강원도 강릉시',
+        startDate: '2026-01-05',
+        endDate: '2026-01-07',
+        participants: 4,
+        image: 'linear-gradient(135deg, #E0C3FC 0%, #ADA7FF 100%)',
+        places: []
+    }
+];
+
+// 인기 여행지 데이터
+const popularDestinations: PopularDestination[] = [
+    {
+        id: 1,
+        name: '경주 불국사',
+        location: '경상북도 경주시',
+        gradient: 'linear-gradient(135deg, #FFF4E1 0%, #FFE5B4 100%)',
+        image: '🏯',
+        description: '천년 고도의 아름다운 사찰'
+    },
+    {
+        id: 2,
+        name: '남해 독일마을',
+        location: '경상남도 남해군',
+        gradient: 'linear-gradient(135deg, #E8F4F8 0%, #BDE0FE 100%)',
+        image: '🏘️',
+        description: '이국적인 풍경의 해안 마을'
+    },
+    {
+        id: 3,
+        name: '담양 죽녹원',
+        location: '전라남도 담양군',
+        gradient: 'linear-gradient(135deg, #E8F8E8 0%, #C1E1C1 100%)',
+        image: '🎋',
+        description: '시원한 대나무 숲길'
+    },
+    {
+        id: 4,
+        name: '속초 설악산',
+        location: '강원도 속초시',
+        gradient: 'linear-gradient(135deg, #FFF0F5 0%, #FFD7E5 100%)',
+        image: '⛰️',
+        description: '웅장한 산과 아름다운 단풍'
+    }
+];
+
+// [수정] 부드러운 파스텔톤 + 유색 그림자 적용
 const dummyTravelCards: TravelCard[] = [
     {
         id: 101,
         title: '강남 여행',
         destination: '서울 강남구',
         date: '12.15 - 12.17',
-        gradient: 'linear-gradient(135deg, #E8D5F2 0%, #D5C6E8 100%)' // 부드러운 라벤더
+        // 부드러운 라벤더 파스텔
+        gradient: 'linear-gradient(135deg, #E0C3FC 0%, #ADA7FF 100%)',
+        shadowColor: 'rgba(173, 167, 255, 0.35)'
     },
     {
         id: 102,
         title: '부산 여행',
         destination: '부산광역시',
         date: '12.20 - 12.23',
-        gradient: 'linear-gradient(135deg, #FFE5EC 0%, #FFC9D9 100%)' // 파스텔 핑크
+        // 따뜻한 코랄 핑크 파스텔
+        gradient: 'linear-gradient(135deg, #FFD1DC 0%, #FFABAB 100%)',
+        shadowColor: 'rgba(255, 171, 171, 0.35)'
     },
     {
         id: 103,
         title: '제주도 여행',
         destination: '제주특별자치도',
         date: '12.25 - 12.28',
-        gradient: 'linear-gradient(135deg, #D4E8F5 0%, #B8D4E8 100%)' // 파스텔 블루
+        // 상쾌한 민트 파스텔
+        gradient: 'linear-gradient(135deg, #C9F0DB 0%, #A8E6CF 100%)',
+        shadowColor: 'rgba(168, 230, 207, 0.35)'
     }
 ];
-
 interface TravelDashboardProps {
     onLogoClick?: () => void;
 }
@@ -86,6 +174,7 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
     const [isPasswordEditOpen, setIsPasswordEditOpen] = useState(false);
     const [isPersonalInfoEditOpen, setIsPersonalInfoEditOpen] = useState(false);
     const [isPersonaEditOpen, setIsPersonaEditOpen] = useState(false);
+    const [isMyPageOpen, setIsMyPageOpen] = useState(false); // 마이페이지 상태 추가
     const [notifications] = useState<Notification[]>(sampleNotifications);
     const [isChatBotOpen, setIsChatBotOpen] = useState(false);
     const [isMapOpen, setIsMapOpen] = useState(false);
@@ -114,7 +203,8 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
     const [travels, setTravels] = useState<TravelItem[]>(() => {
         const userId = getUserId();
         const saved = localStorage.getItem(`travels_${userId}`);
-        return saved ? JSON.parse(saved) : [];
+        // localStorage에 데이터가 없으면 샘플 데이터 사용
+        return saved ? JSON.parse(saved) : sampleTravelItems;
     });
 
     // 더미 카드 상태 관리 (동적 렌더링)
@@ -243,131 +333,67 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
         <div style={{
             width: '100%',
             minHeight: '100vh',
-            background: '#F8FCE8',
+            // 파스텔 톤앤톤 배경 (수채화 감성)
+            background: `
+                radial-gradient(at 85% 15%, rgba(224, 195, 252, 0.4) 0, transparent 50%),
+                radial-gradient(at 15% 55%, rgba(240, 255, 240, 0.3) 0, transparent 50%),
+                radial-gradient(at 70% 85%, rgba(255, 235, 245, 0.35) 0, transparent 50%),
+                radial-gradient(at 30% 25%, rgba(180, 212, 232, 0.25) 0, transparent 50%),
+                #F9FCF5
+            `,
             display: 'flex',
             flexDirection: 'column',
-            paddingBottom: '80px' // 하단 네비게이션 공간 확보
+            paddingBottom: '100px' // 하단 네비게이션 공간 넉넉히 확보
         }}>
-            {/* Header */}
+            {/* Header (글래스모피즘) - 로고만 표시 */}
             <motion.header
                 initial={{ y: -50, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ duration: 0.5 }}
                 style={{
                     display: 'flex',
-                    justifyContent: 'space-between',
+                    justifyContent: 'center',
                     alignItems: 'center',
                     padding: '20px 30px',
-                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+                    backgroundColor: 'rgba(255, 255, 255, 0.45)',
+                    backdropFilter: 'blur(20px)',
+                    WebkitBackdropFilter: 'blur(20px)',
+                    border: '1px solid rgba(255, 255, 255, 0.3)',
+                    borderTop: 'none',
+                    boxShadow: '0 4px 24px rgba(0, 0, 0, 0.06)',
                     position: 'sticky',
                     top: 0,
                     zIndex: 100
                 }}
             >
-                <motion.div
-                    whileHover={{ scale: 1.05 }}
+                <div
                     onClick={onLogoClick}
                     style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '10px',
-                        cursor: 'pointer'
+                        fontSize: '24px',
+                        fontWeight: 'bold',
+                        background: 'linear-gradient(135deg, #89C765 0%, #6FB558 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        cursor: 'pointer',
+                        userSelect: 'none'
                     }}
                 >
-                    <div style={{
-                        width: '40px',
-                        height: '40px',
-                        borderRadius: '10px',
-                        background: 'linear-gradient(135deg, #C8E6C9 0%, #A5D6A7 100%)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                    }}>
-                        <span style={{ fontSize: '20px' }}>🌏</span>
-                    </div>
-                    <span style={{
-                        fontSize: '20px',
-                        fontWeight: 'bold',
-                        color: '#81C784'
-                    }}>
-                        Localy
-                    </span>
-                </motion.div>
-
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                    <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => setIsNotificationOpen(true)}
-                        style={{
-                            width: '44px',
-                            height: '44px',
-                            borderRadius: '50%',
-                            border: 'none',
-                            backgroundColor: 'white',
-                            boxShadow: '0 2px 6px rgba(0, 0, 0, 0.1)',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            position: 'relative'
-                        }}
-                    >
-                        <Bell size={20} color="#666" />
-                        {unreadCount > 0 && (
-                            <div style={{
-                                position: 'absolute',
-                                top: '6px',
-                                right: '6px',
-                                width: '18px',
-                                height: '18px',
-                                borderRadius: '50%',
-                                backgroundColor: '#E84A5F',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontSize: '10px',
-                                fontWeight: 'bold',
-                                color: 'white'
-                            }}>
-                                {unreadCount}
-                            </div>
-                        )}
-                    </motion.button>
-
-                    <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => setIsSettingsOpen(true)}
-                        style={{
-                            width: '44px',
-                            height: '44px',
-                            borderRadius: '50%',
-                            border: 'none',
-                            backgroundColor: 'white',
-                            boxShadow: '0 2px 6px rgba(0, 0, 0, 0.1)',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                        }}
-                    >
-                        <Settings size={20} color="#666" />
-                    </motion.button>
+                    ODIGAYNANG 😻
                 </div>
             </motion.header>
 
             {/* Main Content */}
-            <main style={{
+            < main style={{
                 flex: 1,
-                padding: '30px',
-                maxWidth: '1200px',
+                padding: '20px',
                 width: '100%',
-                margin: '0 auto'
-            }}>
+                maxWidth: '600px', // 모바일 뷰처럼 보이게 제한
+                margin: '0 auto',
+                overflowX: 'hidden' // 가로 스크롤 방지
+            }
+            }>
                 {/* 광고 배너 영역 */}
-                <motion.div
+                < motion.div
                     initial={{ y: 20, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     transition={{ delay: 0.2 }}
@@ -382,32 +408,43 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
                         overflow: 'hidden'
                     }}
                 >
-                    {/* 배경 장식 - 비행기 */}
+                    {/* 배경 장식 - lucide-react 아이콘 */}
+                    < div style={{
+                        position: 'absolute',
+                        top: '20px',
+                        right: '30px',
+                        opacity: 0.15
+                    }}>
+                        <Plane size={64} color="white" strokeWidth={1.5} />
+                    </div >
                     <div style={{
                         position: 'absolute',
-                        top: '10px',
-                        right: '20px',
-                        fontSize: '48px',
-                        opacity: 0.2
-                    }}>✈️</div>
-                    <div style={{
-                        position: 'absolute',
-                        bottom: '10px',
-                        left: '20px',
-                        fontSize: '36px',
-                        opacity: 0.2
-                    }}>🚂</div>
+                        bottom: '20px',
+                        left: '30px',
+                        opacity: 0.15
+                    }}>
+                        <Train size={48} color="white" strokeWidth={1.5} />
+                    </div>
 
-                    <h1 style={{
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px',
                         margin: '0 0 10px 0',
-                        fontSize: '28px',
-                        fontWeight: 'bold',
-                        color: 'white',
                         position: 'relative',
                         zIndex: 1
                     }}>
-                        새로운 여행의 시작 ✨
-                    </h1>
+                        <h1 style={{
+                            margin: 0,
+                            fontSize: '28px',
+                            fontWeight: 'bold',
+                            color: 'white'
+                        }}>
+                            새로운 여행의 시작
+                        </h1>
+                        <Sparkles size={24} color="white" fill="white" opacity={0.9} />
+                    </div>
                     <p style={{
                         margin: 0,
                         fontSize: '15px',
@@ -417,676 +454,1009 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
                     }}>
                         로컬리와 함께 특별한 추억을 만들어보세요
                     </p>
-                </motion.div>
+                </motion.div >
 
-                {/* 여행 카드 슬라이더 (가로 스크롤) */}
-                <div>
+                {/* CGV-Style Coverflow 여행 카드 슬라이더 */}
+                < div className="mt-8" >
                     <h2 style={{
                         fontSize: '20px',
                         fontWeight: 'bold',
-                        color: '#333',
-                        marginBottom: '16px'
+                        color: '#4A5A40', // 텍스트 색상: 쑥색 (눈 편안함)
+                        marginBottom: '10px',
+                        paddingLeft: '10px'
                     }}>
-                        내 여행 계획 📅
+                        내 여행 계획 🗓️
+                    </h2>
+                    {/* 카드 슬라이더 컴포넌트 */}
+                    <TripCardSlider
+                        cards={travelCards}
+                        onCardClick={(card) => {
+                            const travel = travels.find(t => t.id === card.id);
+                            if (travel) {
+                                setSelectedTravel(travel);
+                                setIsDetailViewOpen(true);
+                            }
+                        }}
+                    />
+                </div >
+
+                {/* 인기 여행지 섹션 */}
+                <motion.div
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.3 }}
+                    style={{ marginTop: '40px' }}
+                >
+                    <h2 style={{
+                        fontSize: '20px',
+                        fontWeight: 'bold',
+                        color: '#4A5A40',
+                        marginBottom: '16px',
+                        paddingLeft: '10px'
+                    }}>
+                        인기 여행지 🏞️
+                    </h2>
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(2, 1fr)',
+                        gap: '16px',
+                        paddingLeft: '10px',
+                        paddingRight: '10px'
+                    }}>
+                        {popularDestinations.map((destination) => (
+                            <motion.div
+                                key={destination.id}
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                style={{
+                                    background: destination.gradient,
+                                    borderRadius: '16px',
+                                    padding: '20px',
+                                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
+                                    cursor: 'pointer',
+                                    textAlign: 'center',
+                                    border: '1px solid rgba(255, 255, 255, 0.5)',
+                                    backdropFilter: 'blur(10px)'
+                                }}
+                            >
+                                <div style={{ fontSize: '48px', marginBottom: '8px' }}>
+                                    {destination.image}
+                                </div>
+                                <h3 style={{
+                                    fontSize: '16px',
+                                    fontWeight: 'bold',
+                                    color: '#333',
+                                    margin: '0 0 4px 0'
+                                }}>
+                                    {destination.name}
+                                </h3>
+                                <p style={{
+                                    fontSize: '12px',
+                                    color: '#666',
+                                    margin: '0 0 8px 0'
+                                }}>
+                                    {destination.location}
+                                </p>
+                                <p style={{
+                                    fontSize: '13px',
+                                    color: '#555',
+                                    margin: 0,
+                                    lineHeight: '1.4'
+                                }}>
+                                    {destination.description}
+                                </p>
+                            </motion.div>
+                        ))}
+                    </div>
+                </motion.div>
+
+                {/* 여행 팁 섹션 */}
+                <motion.div
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.4 }}
+                    style={{ marginTop: '40px' }}
+                >
+                    <h2 style={{
+                        fontSize: '20px',
+                        fontWeight: 'bold',
+                        color: '#4A5A40',
+                        marginBottom: '16px',
+                        paddingLeft: '10px'
+                    }}>
+                        여행 팁 💡
                     </h2>
                     <div style={{
                         display: 'flex',
-                        gap: '16px',
-                        overflowX: 'auto',
-                        scrollSnapType: 'x mandatory',
-                        paddingBottom: '20px',
-                        scrollbarWidth: 'none',
-                        msOverflowStyle: 'none'
+                        flexDirection: 'column',
+                        gap: '12px',
+                        paddingLeft: '10px',
+                        paddingRight: '10px'
                     }}>
-                        {/* 동적 렌더링: travelCards 배열 사용 */}
-                        {travelCards.map((card, index) => {
-                            const isCenter = index === currentCardIndex;
+                        <motion.div
+                            whileHover={{ scale: 1.02 }}
+                            style={{
+                                background: 'linear-gradient(135deg, #FFF9E6 0%, #FFE5B4 100%)',
+                                borderRadius: '16px',
+                                padding: '20px',
+                                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.06)',
+                                border: '1px solid rgba(255, 229, 180, 0.5)'
+                            }}
+                        >
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '12px',
+                                marginBottom: '8px'
+                            }}>
+                                <div style={{
+                                    width: '40px',
+                                    height: '40px',
+                                    borderRadius: '50%',
+                                    background: 'linear-gradient(135deg, #FFD580 0%, #FFBB33 100%)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontSize: '20px'
+                                }}>
+                                    💰
+                                </div>
+                                <h3 style={{
+                                    fontSize: '16px',
+                                    fontWeight: 'bold',
+                                    color: '#333',
+                                    margin: 0
+                                }}>
+                                    예산 관리 팁
+                                </h3>
+                            </div>
+                            <p style={{
+                                fontSize: '14px',
+                                color: '#555',
+                                margin: 0,
+                                lineHeight: '1.6',
+                                paddingLeft: '52px'
+                            }}>
+                                현지 결제보다 모바일 페이를 활용하면 환율 혜택을 받을 수 있어요!
+                            </p>
+                        </motion.div>
 
-                            return (
-                                <motion.div
-                                    key={card.id}
-                                    initial={{ opacity: 0, scale: 0.9 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    whileHover={{ scale: 1.02, y: -4 }}
-                                    onClick={() => {
-                                        const travel = travels.find(t => t.id === card.id);
-                                        if (travel) {
-                                            setSelectedTravel(travel);
-                                            setIsDetailViewOpen(true);
-                                        }
-                                    }}
-                                    style={{
-                                        minWidth: '180px',
-                                        width: '180px',
-                                        height: '270px',
-                                        borderRadius: '16px',
-                                        background: card.gradient,
-                                        scrollSnapAlign: 'center',
-                                        cursor: 'pointer',
-                                        position: 'relative',
-                                        overflow: 'hidden',
-                                        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.15)'
-                                    }}
-                                >
-                                    {/* 배경 장식 - 기차 실루엣 */}
-                                    <div style={{
-                                        position: 'absolute',
-                                        top: '10px',
-                                        right: '10px',
-                                        fontSize: '32px',
-                                        opacity: 0.15
-                                    }}>🚂</div>
-                                    <div style={{
-                                        position: 'absolute',
-                                        bottom: '80px',
-                                        left: '10px',
-                                        fontSize: '28px',
-                                        opacity: 0.15
-                                    }}>✈️</div>
+                        <motion.div
+                            whileHover={{ scale: 1.02 }}
+                            style={{
+                                background: 'linear-gradient(135deg, #E8F8F5 0%, #C1E1C1 100%)',
+                                borderRadius: '16px',
+                                padding: '20px',
+                                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.06)',
+                                border: '1px solid rgba(193, 225, 193, 0.5)'
+                            }}
+                        >
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '12px',
+                                marginBottom: '8px'
+                            }}>
+                                <div style={{
+                                    width: '40px',
+                                    height: '40px',
+                                    borderRadius: '50%',
+                                    background: 'linear-gradient(135deg, #A8E6CF 0%, #7FD3A6 100%)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontSize: '20px'
+                                }}>
+                                    🎒
+                                </div>
+                                <h3 style={{
+                                    fontSize: '16px',
+                                    fontWeight: 'bold',
+                                    color: '#333',
+                                    margin: 0
+                                }}>
+                                    짐 싸기 팁
+                                </h3>
+                            </div>
+                            <p style={{
+                                fontSize: '14px',
+                                color: '#555',
+                                margin: 0,
+                                lineHeight: '1.6',
+                                paddingLeft: '52px'
+                            }}>
+                                멀티탭과 보조배터리는 필수! 여행지에서 충전이 어려울 수 있어요.
+                            </p>
+                        </motion.div>
 
-                                    {/* 카드 내용 */}
-                                    <div style={{
-                                        position: 'absolute',
-                                        bottom: 0,
-                                        left: 0,
-                                        right: 0,
-                                        padding: '20px',
-                                        background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 100%)'
-                                    }}>
-                                        <h3 style={{
-                                            margin: '0 0 8px 0',
-                                            fontSize: '18px',
-                                            fontWeight: 'bold',
-                                            color: 'white'
-                                        }}>
-                                            {card.title}
-                                        </h3>
-                                        <p style={{
-                                            margin: 0,
-                                            fontSize: '13px',
-                                            color: 'rgba(255, 255, 255, 0.9)'
-                                        }}>
-                                            📅 {card.date}
-                                        </p>
-                                    </div>
-                                </motion.div>
-                            );
-                        })}
+                        <motion.div
+                            whileHover={{ scale: 1.02 }}
+                            style={{
+                                background: 'linear-gradient(135deg, #FFE5F5 0%, #FFD1E8 100%)',
+                                borderRadius: '16px',
+                                padding: '20px',
+                                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.06)',
+                                border: '1px solid rgba(255, 209, 232, 0.5)'
+                            }}
+                        >
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '12px',
+                                marginBottom: '8px'
+                            }}>
+                                <div style={{
+                                    width: '40px',
+                                    height: '40px',
+                                    borderRadius: '50%',
+                                    background: 'linear-gradient(135deg, #FFC1DC 0%, #FFB3D9 100%)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontSize: '20px'
+                                }}>
+                                    📸
+                                </div>
+                                <h3 style={{
+                                    fontSize: '16px',
+                                    fontWeight: 'bold',
+                                    color: '#333',
+                                    margin: 0
+                                }}>
+                                    사진 촬영 팁
+                                </h3>
+                            </div>
+                            <p style={{
+                                fontSize: '14px',
+                                color: '#555',
+                                margin: 0,
+                                lineHeight: '1.6',
+                                paddingLeft: '52px'
+                            }}>
+                                골든 아워(일출/일몰 1시간 전후)가 가장 아름다운 사진을 남길 수 있어요!
+                            </p>
+                        </motion.div>
                     </div>
-                </div>
-            </main>
+                </motion.div>
+
+                {/* 나의 여행 통계 */}
+                <motion.div
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.5 }}
+                    style={{ marginTop: '40px', marginBottom: '20px' }}
+                >
+                    <h2 style={{
+                        fontSize: '20px',
+                        fontWeight: 'bold',
+                        color: '#4A5A40',
+                        marginBottom: '16px',
+                        paddingLeft: '10px'
+                    }}>
+                        나의 여행 통계 📊
+                    </h2>
+                    <div style={{
+                        background: 'linear-gradient(135deg, rgba(137, 199, 101, 0.15) 0%, rgba(111, 181, 88, 0.1) 100%)',
+                        borderRadius: '20px',
+                        padding: '24px',
+                        marginLeft: '10px',
+                        marginRight: '10px',
+                        boxShadow: '0 4px 16px rgba(137, 199, 101, 0.1)',
+                        border: '1px solid rgba(137, 199, 101, 0.2)',
+                        backdropFilter: 'blur(10px)'
+                    }}>
+                        <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(3, 1fr)',
+                            gap: '20px',
+                            textAlign: 'center'
+                        }}>
+                            <div>
+                                <div style={{
+                                    fontSize: '32px',
+                                    fontWeight: 'bold',
+                                    background: 'linear-gradient(135deg, #89C765 0%, #6FB558 100%)',
+                                    WebkitBackgroundClip: 'text',
+                                    WebkitTextFillColor: 'transparent',
+                                    marginBottom: '8px'
+                                }}>
+                                    {travels.length}
+                                </div>
+                                <div style={{
+                                    fontSize: '13px',
+                                    color: '#666'
+                                }}>
+                                    총 여행 수
+                                </div>
+                            </div>
+                            <div>
+                                <div style={{
+                                    fontSize: '32px',
+                                    fontWeight: 'bold',
+                                    background: 'linear-gradient(135deg, #89C765 0%, #6FB558 100%)',
+                                    WebkitBackgroundClip: 'text',
+                                    WebkitTextFillColor: 'transparent',
+                                    marginBottom: '8px'
+                                }}>
+                                    {new Set(travels.map(t => t.destination)).size}
+                                </div>
+                                <div style={{
+                                    fontSize: '13px',
+                                    color: '#666'
+                                }}>
+                                    방문 도시
+                                </div>
+                            </div>
+                            <div>
+                                <div style={{
+                                    fontSize: '32px',
+                                    fontWeight: 'bold',
+                                    background: 'linear-gradient(135deg, #89C765 0%, #6FB558 100%)',
+                                    WebkitBackgroundClip: 'text',
+                                    WebkitTextFillColor: 'transparent',
+                                    marginBottom: '8px'
+                                }}>
+                                    {travels.reduce((sum, t) => sum + t.participants, 0)}
+                                </div>
+                                <div style={{
+                                    fontSize: '13px',
+                                    color: '#666'
+                                }}>
+                                    함께한 사람
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </motion.div>
+            </main >
 
             {/* Chat Bot */}
             <AnimatePresence>
-                {isChatBotOpen && (
-                    <TravelChatBot
-                        onClose={() => setIsChatBotOpen(false)}
-                        onComplete={(data) => {
-                            console.log('Travel data received:', data);
+                {
+                    isChatBotOpen && (
+                        <TravelChatBot
+                            onClose={() => setIsChatBotOpen(false)}
+                            onComplete={(data) => {
+                                console.log('Travel data received:', data);
 
-                            // Create travel item from chatbot data
-                            const newTravel: TravelItem = {
-                                id: Date.now(),
-                                title: `${data.region} 여행`,
-                                destination: data.region,
-                                startDate: data.startDate,
-                                endDate: data.endDate,
-                                participants: data.participants,
-                                image: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)',
-                                places: data.schedules || []
-                            };
+                                // Create travel item from chatbot data
+                                const newTravel: TravelItem = {
+                                    id: Date.now(),
+                                    title: `${data.region} 여행`,
+                                    destination: data.region,
+                                    startDate: data.startDate,
+                                    endDate: data.endDate,
+                                    participants: data.participants,
+                                    image: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)',
+                                    places: data.schedules || []
+                                };
 
-                            // Save to travels list
-                            const userId = getUserId();
-                            const updatedTravels = [...travels, newTravel];
-                            setTravels(updatedTravels);
-                            localStorage.setItem(`travels_${userId}`, JSON.stringify(updatedTravels));
+                                // Save to travels list
+                                const userId = getUserId();
+                                const updatedTravels = [...travels, newTravel];
+                                setTravels(updatedTravels);
+                                localStorage.setItem(`travels_${userId}`, JSON.stringify(updatedTravels));
 
-                            // Close chatbot and show detail view
-                            setIsChatBotOpen(false);
-                            setSelectedTravel(newTravel);
-                            setIsDetailViewOpen(true);
-                        }}
-                        onMapSelect={(location) => {
-                            setSelectedLocation(location);
-                            setIsMapOpen(true);
-                        }}
-                    />
-                )}
-            </AnimatePresence>
+                                // Close chatbot and show detail view
+                                setIsChatBotOpen(false);
+                                setSelectedTravel(newTravel);
+                                setIsDetailViewOpen(true);
+                            }}
+                            onMapSelect={(location) => {
+                                setSelectedLocation(location);
+                                setIsMapOpen(true);
+                            }}
+                        />
+                    )
+                }
+            </AnimatePresence >
 
             {/* Schedule Editor */}
             <AnimatePresence>
-                {isScheduleEditorOpen && (
-                    <TravelScheduleEditor
-                        onClose={() => setIsScheduleEditorOpen(false)}
-                        onComplete={handleNewTravelSave}
-                    />
-                )}
-            </AnimatePresence>
+                {
+                    isScheduleEditorOpen && (
+                        <TravelScheduleEditor
+                            onClose={() => setIsScheduleEditorOpen(false)}
+                            onComplete={handleNewTravelSave}
+                        />
+                    )
+                }
+            </AnimatePresence >
 
             {/* Notification Panel */}
             <AnimatePresence>
-                {isNotificationOpen && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.3 }}
-                        style={{
-                            position: 'fixed',
-                            top: 0,
-                            left: '50%',
-                            transform: 'translateX(-50%)',
-                            width: '100%',
-                            maxWidth: '480px',
-                            height: '100vh',
-                            backgroundColor: 'white',
-                            zIndex: 1000,
-                            display: 'flex',
-                            flexDirection: 'column',
-                            boxShadow: '0 0 20px rgba(0, 0, 0, 0.1)'
-                        }}
-                    >
-                        <div style={{
-                            padding: '20px 30px',
-                            borderBottom: '1px solid #eee',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center'
-                        }}>
-                            <h2 style={{
-                                fontSize: '24px',
-                                fontWeight: 'bold',
-                                color: '#2D8B5F',
-                                margin: 0
+                {
+                    isNotificationOpen && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.3 }}
+                            style={{
+                                position: 'fixed',
+                                top: 0,
+                                left: '50%',
+                                transform: 'translateX(-50%)',
+                                width: '100%',
+                                maxWidth: '480px',
+                                height: '100vh',
+                                backgroundColor: 'white',
+                                zIndex: 1000,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                boxShadow: '0 0 20px rgba(0, 0, 0, 0.1)'
+                            }}
+                        >
+                            <div style={{
+                                padding: '20px 30px',
+                                borderBottom: '1px solid #eee',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center'
                             }}>
-                                알림
-                            </h2>
-                            <motion.button
-                                whileHover={{ scale: 1.1 }}
-                                whileTap={{ scale: 0.95 }}
-                                onClick={() => setIsNotificationOpen(false)}
-                                style={{
-                                    width: '40px',
-                                    height: '40px',
-                                    borderRadius: '50%',
-                                    border: 'none',
-                                    backgroundColor: '#f8f9fa',
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center'
-                                }}
-                            >
-                                <X size={20} color="#666" />
-                            </motion.button>
-                        </div>
-
-                        <div style={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
-                            {notifications.map((notification) => (
-                                <div
-                                    key={notification.id}
+                                <h2 style={{
+                                    fontSize: '24px',
+                                    fontWeight: 'bold',
+                                    color: '#2D8B5F',
+                                    margin: 0
+                                }}>
+                                    알림
+                                </h2>
+                                <motion.button
+                                    whileHover={{ scale: 1.1 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={() => setIsNotificationOpen(false)}
                                     style={{
-                                        padding: '20px',
-                                        backgroundColor: notification.isRead ? 'white' : '#f0f9f5',
-                                        borderRadius: '12px',
-                                        marginBottom: '12px',
-                                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
-                                        cursor: 'pointer'
+                                        width: '40px',
+                                        height: '40px',
+                                        borderRadius: '50%',
+                                        border: 'none',
+                                        backgroundColor: '#f8f9fa',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center'
                                     }}
                                 >
-                                    <div style={{
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
-                                        marginBottom: '8px'
-                                    }}>
-                                        <h3 style={{
-                                            margin: 0,
-                                            fontSize: '16px',
-                                            fontWeight: '600',
-                                            color: '#333'
-                                        }}>
-                                            {notification.title}
-                                        </h3>
-                                        <span style={{ fontSize: '12px', color: '#999' }}>
-                                            {notification.time}
-                                        </span>
-                                    </div>
-                                    <p style={{
-                                        margin: 0,
-                                        fontSize: '14px',
-                                        color: '#666',
-                                        lineHeight: '1.5'
-                                    }}>
-                                        {notification.message}
-                                    </p>
-                                </div>
-                            ))}
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            {/* Settings Panel */}
-            <AnimatePresence>
-                {isSettingsOpen && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.3 }}
-                        style={{
-                            position: 'fixed',
-                            top: 0,
-                            left: '50%',
-                            transform: 'translateX(-50%)',
-                            width: '100%',
-                            maxWidth: '480px',
-                            height: '100vh',
-                            backgroundColor: 'white',
-                            zIndex: 1000,
-                            display: 'flex',
-                            flexDirection: 'column',
-                            boxShadow: '0 0 20px rgba(0, 0, 0, 0.1)'
-                        }}
-                    >
-                        <div style={{
-                            padding: '20px 30px',
-                            borderBottom: '1px solid #eee',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center'
-                        }}>
-                            <h2 style={{
-                                fontSize: '24px',
-                                fontWeight: 'bold',
-                                color: '#2D8B5F',
-                                margin: 0
-                            }}>
-                                설정
-                            </h2>
-                            <motion.button
-                                whileHover={{ scale: 1.1 }}
-                                whileTap={{ scale: 0.95 }}
-                                onClick={() => setIsSettingsOpen(false)}
-                                style={{
-                                    width: '40px',
-                                    height: '40px',
-                                    borderRadius: '50%',
-                                    border: 'none',
-                                    backgroundColor: '#f8f9fa',
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center'
-                                }}
-                            >
-                                <X size={20} color="#666" />
-                            </motion.button>
-                        </div>
-
-                        <div style={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
-                            {/* 환영 메시지 */}
-                            <div style={{
-                                backgroundColor: '#FFF5E6',
-                                borderRadius: '12px',
-                                padding: '20px',
-                                marginBottom: '30px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '12px'
-                            }}>
-                                <span style={{ fontSize: '32px' }}>👋</span>
-                                <span style={{
-                                    fontSize: '16px',
-                                    fontWeight: '600',
-                                    color: '#2D8B5F'
-                                }}>
-                                    {userName}님 반가워요!
-                                </span>
+                                    <X size={20} color="#666" />
+                                </motion.button>
                             </div>
 
-                            {/* 앱 설정 */}
-                            <h3 style={{
-                                margin: '0 0 12px 0',
-                                fontSize: '14px',
-                                fontWeight: '600',
-                                color: '#999'
-                            }}>
-                                앱 설정
-                            </h3>
-
-                            <div style={{
-                                backgroundColor: 'white',
-                                borderRadius: '12px',
-                                marginBottom: '30px',
-                                overflow: 'hidden'
-                            }}>
-                                {/* 푸시 알림 */}
-                                <div style={{
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center',
-                                    padding: '16px 20px',
-                                    borderBottom: '1px solid #f0f0f0'
-                                }}>
-                                    <span style={{ fontSize: '15px', color: '#333' }}>
-                                        푸시 알림
-                                    </span>
-                                    <button
-                                        onClick={() => setIsNotificationEnabled(!isNotificationEnabled)}
+                            <div style={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
+                                {notifications.map((notification) => (
+                                    <div
+                                        key={notification.id}
                                         style={{
-                                            width: '48px',
-                                            height: '28px',
-                                            borderRadius: '14px',
-                                            border: 'none',
-                                            background: isNotificationEnabled ? '#2D8B5F' : '#ccc',
-                                            cursor: 'pointer',
-                                            position: 'relative',
-                                            transition: 'background 0.3s'
+                                            padding: '20px',
+                                            backgroundColor: notification.isRead ? 'white' : '#f0f9f5',
+                                            borderRadius: '12px',
+                                            marginBottom: '12px',
+                                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+                                            cursor: 'pointer'
                                         }}
                                     >
                                         <div style={{
-                                            width: '20px',
-                                            height: '20px',
-                                            borderRadius: '50%',
-                                            backgroundColor: 'white',
-                                            position: 'absolute',
-                                            top: '4px',
-                                            left: isNotificationEnabled ? '24px' : '4px',
-                                            transition: 'left 0.3s'
-                                        }} />
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            marginBottom: '8px'
+                                        }}>
+                                            <h3 style={{
+                                                margin: 0,
+                                                fontSize: '16px',
+                                                fontWeight: '600',
+                                                color: '#333'
+                                            }}>
+                                                {notification.title}
+                                            </h3>
+                                            <span style={{ fontSize: '12px', color: '#999' }}>
+                                                {notification.time}
+                                            </span>
+                                        </div>
+                                        <p style={{
+                                            margin: 0,
+                                            fontSize: '14px',
+                                            color: '#666',
+                                            lineHeight: '1.5'
+                                        }}>
+                                            {notification.message}
+                                        </p>
+                                    </div>
+                                ))}
+                            </div>
+                        </motion.div>
+                    )
+                }
+            </AnimatePresence >
+
+            {/* Settings Panel */}
+            <AnimatePresence>
+                {
+                    isSettingsOpen && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.3 }}
+                            style={{
+                                position: 'fixed',
+                                top: 0,
+                                left: '50%',
+                                transform: 'translateX(-50%)',
+                                width: '100%',
+                                maxWidth: '480px',
+                                height: '100vh',
+                                backgroundColor: 'white',
+                                zIndex: 1000,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                boxShadow: '0 0 20px rgba(0, 0, 0, 0.1)'
+                            }}
+                        >
+                            <div style={{
+                                padding: '20px 30px',
+                                borderBottom: '1px solid #eee',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center'
+                            }}>
+                                <h2 style={{
+                                    fontSize: '24px',
+                                    fontWeight: 'bold',
+                                    color: '#2D8B5F',
+                                    margin: 0
+                                }}>
+                                    설정
+                                </h2>
+                                <motion.button
+                                    whileHover={{ scale: 1.1 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={() => setIsSettingsOpen(false)}
+                                    style={{
+                                        width: '40px',
+                                        height: '40px',
+                                        borderRadius: '50%',
+                                        border: 'none',
+                                        backgroundColor: '#f8f9fa',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center'
+                                    }}
+                                >
+                                    <X size={20} color="#666" />
+                                </motion.button>
+                            </div>
+
+                            <div style={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
+                                {/* 환영 메시지 */}
+                                <div style={{
+                                    backgroundColor: '#FFF5E6',
+                                    borderRadius: '12px',
+                                    padding: '20px',
+                                    marginBottom: '30px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '12px'
+                                }}>
+                                    <div style={{
+                                        width: '48px',
+                                        height: '48px',
+                                        borderRadius: '50%',
+                                        background: 'linear-gradient(135deg, #FFE5AE 0%, #FFD580 100%)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center'
+                                    }}>
+                                        <Hand size={26} color="#FF9800" strokeWidth={2} />
+                                    </div>
+                                    <span style={{
+                                        fontSize: '16px',
+                                        fontWeight: '600',
+                                        color: '#2D8B5F'
+                                    }}>
+                                        {userName}님 반가워요!
+                                    </span>
+                                </div>
+
+                                {/* 앱 설정 */}
+                                <h3 style={{
+                                    margin: '0 0 12px 0',
+                                    fontSize: '14px',
+                                    fontWeight: '600',
+                                    color: '#999'
+                                }}>
+                                    앱 설정
+                                </h3>
+
+                                <div style={{
+                                    backgroundColor: 'white',
+                                    borderRadius: '12px',
+                                    marginBottom: '30px',
+                                    overflow: 'hidden'
+                                }}>
+                                    {/* 푸시 알림 */}
+                                    <div style={{
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center',
+                                        padding: '16px 20px',
+                                        borderBottom: '1px solid #f0f0f0'
+                                    }}>
+                                        <span style={{ fontSize: '15px', color: '#333' }}>
+                                            푸시 알림
+                                        </span>
+                                        <button
+                                            onClick={() => setIsNotificationEnabled(!isNotificationEnabled)}
+                                            style={{
+                                                width: '48px',
+                                                height: '28px',
+                                                borderRadius: '14px',
+                                                border: 'none',
+                                                background: isNotificationEnabled ? '#2D8B5F' : '#ccc',
+                                                cursor: 'pointer',
+                                                position: 'relative',
+                                                transition: 'background 0.3s'
+                                            }}
+                                        >
+                                            <div style={{
+                                                width: '20px',
+                                                height: '20px',
+                                                borderRadius: '50%',
+                                                backgroundColor: 'white',
+                                                position: 'absolute',
+                                                top: '4px',
+                                                left: isNotificationEnabled ? '24px' : '4px',
+                                                transition: 'left 0.3s'
+                                            }} />
+                                        </button>
+                                    </div>
+
+                                    {/* 캐시 삭제 */}
+                                    <button style={{
+                                        width: '100%',
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center',
+                                        padding: '16px 20px',
+                                        border: 'none',
+                                        borderBottom: '1px solid #f0f0f0',
+                                        backgroundColor: 'transparent',
+                                        cursor: 'pointer',
+                                        fontSize: '15px',
+                                        color: '#333',
+                                        textAlign: 'left'
+                                    }}>
+                                        캐시 삭제
+                                        <span style={{ color: '#ccc' }}>›</span>
+                                    </button>
+
+                                    {/* 라이센스 */}
+                                    <button style={{
+                                        width: '100%',
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center',
+                                        padding: '16px 20px',
+                                        border: 'none',
+                                        borderBottom: '1px solid #f0f0f0',
+                                        backgroundColor: 'transparent',
+                                        cursor: 'pointer',
+                                        fontSize: '15px',
+                                        color: '#333',
+                                        textAlign: 'left'
+                                    }}>
+                                        라이센스
+                                        <span style={{ color: '#ccc' }}>›</span>
+                                    </button>
+
+                                    {/* 약관 및 이용동의 */}
+                                    <button style={{
+                                        width: '100%',
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center',
+                                        padding: '16px 20px',
+                                        border: 'none',
+                                        borderBottom: '1px solid #f0f0f0',
+                                        backgroundColor: 'transparent',
+                                        cursor: 'pointer',
+                                        fontSize: '15px',
+                                        color: '#333',
+                                        textAlign: 'left'
+                                    }}>
+                                        약관 및 이용동의
+                                        <span style={{ color: '#ccc' }}>›</span>
+                                    </button>
+
+                                    {/* 버전 정보 */}
+                                    <div style={{
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center',
+                                        padding: '16px 20px'
+                                    }}>
+                                        <span style={{ fontSize: '15px', color: '#333' }}>
+                                            버전 정보
+                                        </span>
+                                        <span style={{ fontSize: '14px', color: '#999' }}>
+                                            v1.0.0
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* 계정 관리 */}
+                                <h3 style={{
+                                    margin: '0 0 12px 0',
+                                    fontSize: '14px',
+                                    fontWeight: '600',
+                                    color: '#999'
+                                }}>
+                                    계정 관리
+                                </h3>
+
+                                <div style={{
+                                    backgroundColor: 'white',
+                                    borderRadius: '12px',
+                                    marginBottom: '30px',
+                                    overflow: 'hidden'
+                                }}>
+                                    {/* 비밀번호 수정 */}
+                                    <button
+                                        onClick={() => setIsPasswordEditOpen(true)}
+                                        style={{
+                                            width: '100%',
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'center',
+                                            padding: '16px 20px',
+                                            border: 'none',
+                                            borderBottom: '1px solid #f0f0f0',
+                                            backgroundColor: 'transparent',
+                                            cursor: 'pointer',
+                                            fontSize: '15px',
+                                            color: '#333',
+                                            textAlign: 'left'
+                                        }}
+                                    >
+                                        비밀번호 수정
+                                        <span style={{ color: '#ccc' }}>›</span>
+                                    </button>
+
+                                    {/* 개인정보 수정 */}
+                                    <button
+                                        onClick={() => setIsPersonalInfoEditOpen(true)}
+                                        style={{
+                                            width: '100%',
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'center',
+                                            padding: '16px 20px',
+                                            border: 'none',
+                                            borderBottom: '1px solid #f0f0f0',
+                                            backgroundColor: 'transparent',
+                                            cursor: 'pointer',
+                                            fontSize: '15px',
+                                            color: '#333',
+                                            textAlign: 'left'
+                                        }}
+                                    >
+                                        개인정보 수정
+                                        <span style={{ color: '#ccc' }}>›</span>
+                                    </button>
+
+                                    {/* 페르소나 수정 */}
+                                    <button
+                                        onClick={() => setIsPersonaEditOpen(true)}
+                                        style={{
+                                            width: '100%',
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'center',
+                                            padding: '16px 20px',
+                                            border: 'none',
+                                            backgroundColor: 'transparent',
+                                            cursor: 'pointer',
+                                            fontSize: '15px',
+                                            color: '#333',
+                                            textAlign: 'left'
+                                        }}
+                                    >
+                                        페르소나 수정
+                                        <span style={{ color: '#ccc' }}>›</span>
                                     </button>
                                 </div>
 
-                                {/* 캐시 삭제 */}
-                                <button style={{
-                                    width: '100%',
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center',
-                                    padding: '16px 20px',
-                                    border: 'none',
-                                    borderBottom: '1px solid #f0f0f0',
-                                    backgroundColor: 'transparent',
-                                    cursor: 'pointer',
-                                    fontSize: '15px',
-                                    color: '#333',
-                                    textAlign: 'left'
-                                }}>
-                                    캐시 삭제
-                                    <span style={{ color: '#ccc' }}>›</span>
-                                </button>
-
-                                {/* 라이센스 */}
-                                <button style={{
-                                    width: '100%',
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center',
-                                    padding: '16px 20px',
-                                    border: 'none',
-                                    borderBottom: '1px solid #f0f0f0',
-                                    backgroundColor: 'transparent',
-                                    cursor: 'pointer',
-                                    fontSize: '15px',
-                                    color: '#333',
-                                    textAlign: 'left'
-                                }}>
-                                    라이센스
-                                    <span style={{ color: '#ccc' }}>›</span>
-                                </button>
-
-                                {/* 약관 및 이용동의 */}
-                                <button style={{
-                                    width: '100%',
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center',
-                                    padding: '16px 20px',
-                                    border: 'none',
-                                    borderBottom: '1px solid #f0f0f0',
-                                    backgroundColor: 'transparent',
-                                    cursor: 'pointer',
-                                    fontSize: '15px',
-                                    color: '#333',
-                                    textAlign: 'left'
-                                }}>
-                                    약관 및 이용동의
-                                    <span style={{ color: '#ccc' }}>›</span>
-                                </button>
-
-                                {/* 버전 정보 */}
+                                {/* 고객센터 */}
                                 <div style={{
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center',
-                                    padding: '16px 20px'
+                                    backgroundColor: 'white',
+                                    borderRadius: '12px',
+                                    marginBottom: '20px',
+                                    overflow: 'hidden'
                                 }}>
-                                    <span style={{ fontSize: '15px', color: '#333' }}>
-                                        버전 정보
-                                    </span>
-                                    <span style={{ fontSize: '14px', color: '#999' }}>
-                                        v1.0.0
-                                    </span>
+                                    <button style={{
+                                        width: '100%',
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center',
+                                        padding: '16px 20px',
+                                        border: 'none',
+                                        backgroundColor: 'transparent',
+                                        cursor: 'pointer',
+                                        fontSize: '15px',
+                                        color: '#333',
+                                        textAlign: 'left'
+                                    }}>
+                                        고객센터
+                                        <span style={{ color: '#ccc' }}>›</span>
+                                    </button>
                                 </div>
-                            </div>
 
-                            {/* 계정 관리 */}
-                            <h3 style={{
-                                margin: '0 0 12px 0',
-                                fontSize: '14px',
-                                fontWeight: '600',
-                                color: '#999'
-                            }}>
-                                계정 관리
-                            </h3>
-
-                            <div style={{
-                                backgroundColor: 'white',
-                                borderRadius: '12px',
-                                marginBottom: '30px',
-                                overflow: 'hidden'
-                            }}>
-                                {/* 비밀번호 수정 */}
-                                <button
-                                    onClick={() => setIsPasswordEditOpen(true)}
+                                {/* 로그아웃 버튼 */}
+                                <motion.button
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                    onClick={handleLogout}
                                     style={{
                                         width: '100%',
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
-                                        alignItems: 'center',
-                                        padding: '16px 20px',
+                                        padding: '16px',
+                                        borderRadius: '12px',
                                         border: 'none',
-                                        borderBottom: '1px solid #f0f0f0',
-                                        backgroundColor: 'transparent',
-                                        cursor: 'pointer',
+                                        backgroundColor: '#f1f3f5',
+                                        color: '#666',
                                         fontSize: '15px',
-                                        color: '#333',
-                                        textAlign: 'left'
+                                        fontWeight: '600',
+                                        cursor: 'pointer',
+                                        marginBottom: '12px'
                                     }}
                                 >
-                                    비밀번호 수정
-                                    <span style={{ color: '#ccc' }}>›</span>
-                                </button>
+                                    로그아웃
+                                </motion.button>
 
-                                {/* 개인정보 수정 */}
-                                <button
-                                    onClick={() => setIsPersonalInfoEditOpen(true)}
+                                {/* 회원탈퇴 버튼 */}
+                                <motion.button
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                    onClick={handleWithdraw}
                                     style={{
                                         width: '100%',
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
-                                        alignItems: 'center',
-                                        padding: '16px 20px',
+                                        padding: '16px',
+                                        borderRadius: '12px',
                                         border: 'none',
-                                        borderBottom: '1px solid #f0f0f0',
-                                        backgroundColor: 'transparent',
-                                        cursor: 'pointer',
+                                        backgroundColor: '#FFEBEE',
+                                        color: '#E84A5F',
                                         fontSize: '15px',
-                                        color: '#333',
-                                        textAlign: 'left'
+                                        fontWeight: '600',
+                                        cursor: 'pointer'
                                     }}
                                 >
-                                    개인정보 수정
-                                    <span style={{ color: '#ccc' }}>›</span>
-                                </button>
-
-                                {/* 페르소나 수정 */}
-                                <button
-                                    onClick={() => setIsPersonaEditOpen(true)}
-                                    style={{
-                                        width: '100%',
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
-                                        alignItems: 'center',
-                                        padding: '16px 20px',
-                                        border: 'none',
-                                        backgroundColor: 'transparent',
-                                        cursor: 'pointer',
-                                        fontSize: '15px',
-                                        color: '#333',
-                                        textAlign: 'left'
-                                    }}
-                                >
-                                    페르소나 수정
-                                    <span style={{ color: '#ccc' }}>›</span>
-                                </button>
+                                    회원탈퇴
+                                </motion.button>
                             </div>
-
-                            {/* 고객센터 */}
-                            <div style={{
-                                backgroundColor: 'white',
-                                borderRadius: '12px',
-                                marginBottom: '20px',
-                                overflow: 'hidden'
-                            }}>
-                                <button style={{
-                                    width: '100%',
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center',
-                                    padding: '16px 20px',
-                                    border: 'none',
-                                    backgroundColor: 'transparent',
-                                    cursor: 'pointer',
-                                    fontSize: '15px',
-                                    color: '#333',
-                                    textAlign: 'left'
-                                }}>
-                                    고객센터
-                                    <span style={{ color: '#ccc' }}>›</span>
-                                </button>
-                            </div>
-
-                            {/* 로그아웃 버튼 */}
-                            <motion.button
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                                onClick={handleLogout}
-                                style={{
-                                    width: '100%',
-                                    padding: '16px',
-                                    borderRadius: '12px',
-                                    border: 'none',
-                                    backgroundColor: '#f1f3f5',
-                                    color: '#666',
-                                    fontSize: '15px',
-                                    fontWeight: '600',
-                                    cursor: 'pointer',
-                                    marginBottom: '12px'
-                                }}
-                            >
-                                로그아웃
-                            </motion.button>
-
-                            {/* 회원탈퇴 버튼 */}
-                            <motion.button
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                                onClick={handleWithdraw}
-                                style={{
-                                    width: '100%',
-                                    padding: '16px',
-                                    borderRadius: '12px',
-                                    border: 'none',
-                                    backgroundColor: '#FFEBEE',
-                                    color: '#E84A5F',
-                                    fontSize: '15px',
-                                    fontWeight: '600',
-                                    cursor: 'pointer'
-                                }}
-                            >
-                                회원탈퇴
-                            </motion.button>
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+                        </motion.div>
+                    )
+                }
+            </AnimatePresence >
 
             {/* Password Edit Screen */}
             <AnimatePresence>
-                {isPasswordEditOpen && (
-                    <PasswordEditScreen
-                        userId={userId}
-                        onClose={() => setIsPasswordEditOpen(false)}
-                        onBack={() => setIsPasswordEditOpen(false)} // 뒤로가기 눌러도 닫히게
-                    />
-                )}
-            </AnimatePresence>
+                {
+                    isPasswordEditOpen && (
+                        <PasswordEditScreen
+                            userId={userId}
+                            onClose={() => setIsPasswordEditOpen(false)}
+                            onBack={() => setIsPasswordEditOpen(false)} // 뒤로가기 눌러도 닫히게
+                        />
+                    )
+                }
+            </AnimatePresence >
 
             {/* Personal Info Edit Screen */}
             <AnimatePresence>
-                {isPersonalInfoEditOpen && (
-                    <PersonalInfoEditScreen onClose={() => setIsPersonalInfoEditOpen(false)} />
-                )}
-            </AnimatePresence>
+                {
+                    isPersonalInfoEditOpen && (
+                        <PersonalInfoEditScreen onClose={() => setIsPersonalInfoEditOpen(false)} />
+                    )
+                }
+            </AnimatePresence >
 
             {/* Persona Edit Screen */}
             <AnimatePresence>
-                {isPersonaEditOpen && (
-                    <PersonaEditScreen onClose={() => setIsPersonaEditOpen(false)} />
-                )}
-            </AnimatePresence>
+                {
+                    isPersonaEditOpen && (
+                        <PersonaEditScreen onClose={() => setIsPersonaEditOpen(false)} />
+                    )
+                }
+            </AnimatePresence >
 
             {/* Map Modal */}
             <AnimatePresence>
-                {isMapOpen && (
-                    <MapScreen
-                        tripData={tripData || {
-                            destination: '',
-                            participants: 1,
-                            startDate: '',
-                            endDate: ''
-                        }}
-                        onClose={() => setIsMapOpen(false)}
-                        initialLocation={selectedLocation}
-                        onScheduleSave={handleScheduleSave}
-                    />
-                )}
-            </AnimatePresence>
+                {
+                    isMapOpen && (
+                        <MapScreen
+                            tripData={tripData || {
+                                destination: '',
+                                participants: 1,
+                                startDate: '',
+                                endDate: ''
+                            }}
+                            onClose={() => setIsMapOpen(false)}
+                            initialLocation={selectedLocation}
+                            onScheduleSave={handleScheduleSave}
+                        />
+                    )
+                }
+            </AnimatePresence >
 
             {/* Detail View */}
             <AnimatePresence>
-                {isDetailViewOpen && selectedTravel && (
-                    <TravelDetailView
-                        travel={selectedTravel}
-                        onClose={() => setIsDetailViewOpen(false)}
-                        onDelete={handleScheduleDelete}
-                    />
-                )}
-            </AnimatePresence>
+                {
+                    isDetailViewOpen && selectedTravel && (
+                        <TravelDetailView
+                            travel={selectedTravel}
+                            onClose={() => setIsDetailViewOpen(false)}
+                            onDelete={handleScheduleDelete}
+                        />
+                    )
+                }
+            </AnimatePresence >
 
-            {/* Bottom Navigation */}
-            <BottomNav
+            {/* Floating Chatbot Button */}
+            <motion.button
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setIsChatBotOpen(true)}
+                style={{
+                    position: 'fixed',
+                    bottom: '120px',
+                    right: '30px',
+                    width: '70px',
+                    height: '70px',
+                    borderRadius: '50%',
+                    border: '3px solid rgba(137, 199, 101, 0.5)',
+                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                    backdropFilter: 'blur(20px)',
+                    WebkitBackdropFilter: 'blur(20px)',
+                    boxShadow: '0 8px 24px rgba(137, 199, 101, 0.4), 0 0 0 0 rgba(137, 199, 101, 0.5)',
+                    cursor: 'pointer',
+                    zIndex: 999,
+                    padding: 0,
+                    overflow: 'hidden',
+                    animation: 'pulse 2s infinite'
+                }}
+            >
+                <img
+                    src={chatbotAvatar}
+                    alt="챗봇"
+                    style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover'
+                    }}
+                />
+                {/* Pulse animation style */}
+                <style>{`
+                    @keyframes pulse {
+                        0%, 100% {
+                            box-shadow: 0 8px 24px rgba(137, 199, 101, 0.4), 0 0 0 0 rgba(137, 199, 101, 0.5);
+                        }
+                        50% {
+                            box-shadow: 0 8px 24px rgba(137, 199, 101, 0.6), 0 0 0 12px rgba(137, 199, 101, 0);
+                        }
+                    }
+                `}</style>
+            </motion.button>
+
+            {/* [수정] Bottom Navigation */}
+            < BottomNav
                 activeTab="home"
-                onHomeClick={() => {/* 홈 화면 유지 */ }}
+                onHomeClick={() => { }}
                 onNotificationClick={() => setIsNotificationOpen(true)}
                 onAIScheduleClick={() => setIsChatBotOpen(true)}
                 onManualScheduleClick={() => setIsScheduleEditorOpen(true)}
-                onMyTravelsClick={() => {/* 내 여행 보기 - 현재 화면에 이미 표시됨 */ }}
-                onLoginClick={onLogoClick}
+                onMyPageClick={() => setIsMyPageOpen(true)} // 마이페이지 열기
+                onSettingsClick={() => setIsSettingsOpen(true)} // 하단바 설정 버튼으로 설정 패널 열기
             />
         </div >
     );
