@@ -178,6 +178,7 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
     const [isPersonaEditOpen, setIsPersonaEditOpen] = useState(false);
     const [isChatBotDragging, setIsChatBotDragging] = useState(false);
     const [isMyPageOpen, setIsMyPageOpen] = useState(false); // 마이페이지 상태 추가
+    const [activeTab, setActiveTab] = useState<'home' | 'notifications' | 'my' | 'settings'>('home');
     const [notifications] = useState<Notification[]>(sampleNotifications);
     const [isChatBotOpen, setIsChatBotOpen] = useState(false);
     const [isMapOpen, setIsMapOpen] = useState(false);

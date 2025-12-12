@@ -62,7 +62,7 @@ export function BottomNav({
                 {/* 오른쪽 메뉴 */}
                 <div className="flex gap-4 items-center">
                     <NavIcon icon={<User size={24} />} label="MY" isActive={activeTab === 'mypage'} onClick={onMyPageClick} />
-                    <NavIcon icon={<Settings size={24} />} label="설정" isActive={false} onClick={onSettingsClick} />
+                    <NavIcon icon={<Settings size={24} />} label="설정" isActive={activeTab === 'settings'} onClick={onSettingsClick} />
                 </div>
             </div>
 
