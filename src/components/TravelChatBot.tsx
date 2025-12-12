@@ -445,37 +445,65 @@ export function TravelChatBot({ onClose, onComplete, onMapSelect }: TravelChatBo
                         padding: '0',
                         textAlign: 'center',
                         background: 'transparent',
-                        position: 'relative'
+                        position: 'relative',
+                        height: '280px'
                     }}
                 >
-                    <AnimatePresence mode="wait">
-                        <motion.img
-                            key={isCatTalking ? 'talking' : 'idle'}
-                            src={isCatTalking ? catTalkingImage : catImage}
-                            alt="Travel Cat"
-                            initial={{ opacity: 0 }}
-                            animate={{
-                                opacity: 1,
-                                y: [0, -5, 0]
-                            }}
-                            exit={{ opacity: 0 }}
-                            transition={{
-                                opacity: { duration: 0.2 },
-                                y: {
-                                    duration: 2,
-                                    repeat: Infinity,
-                                    ease: "easeInOut"
-                                }
-                            }}
-                            style={{
-                                width: '100%',
-                                height: '280px',
-                                objectFit: 'cover',
-                                objectPosition: 'center',
-                                display: 'block'
-                            }}
-                        />
-                    </AnimatePresence>
+                    {/* Cat idle image */}
+                    <motion.img
+                        src={catImage}
+                        alt="Travel Cat"
+                        animate={{
+                            opacity: isCatTalking ? 0 : 1,
+                            y: [0, -5, 0]
+                        }}
+                        transition={{
+                            opacity: { duration: 0.15 },
+                            y: {
+                                duration: 2,
+                                repeat: Infinity,
+                                ease: "easeInOut"
+                            }
+                        }}
+                        style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            width: '100%',
+                            height: '280px',
+                            objectFit: 'cover',
+                            objectPosition: 'center',
+                            display: 'block'
+                        }}
+                    />
+
+                    {/* Cat talking image */}
+                    <motion.img
+                        src={catTalkingImage}
+                        alt="Travel Cat Talking"
+                        animate={{
+                            opacity: isCatTalking ? 1 : 0,
+                            y: [0, -5, 0]
+                        }}
+                        transition={{
+                            opacity: { duration: 0.15 },
+                            y: {
+                                duration: 2,
+                                repeat: Infinity,
+                                ease: "easeInOut"
+                            }
+                        }}
+                        style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            width: '100%',
+                            height: '280px',
+                            objectFit: 'cover',
+                            objectPosition: 'center',
+                            display: 'block'
+                        }}
+                    />
                 </motion.div>
 
                 {/* 채팅 영역 */}
