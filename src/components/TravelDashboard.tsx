@@ -176,6 +176,7 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
     const [isPasswordEditOpen, setIsPasswordEditOpen] = useState(false);
     const [isPersonalInfoEditOpen, setIsPersonalInfoEditOpen] = useState(false);
     const [isPersonaEditOpen, setIsPersonaEditOpen] = useState(false);
+    const [isChatBotDragging, setIsChatBotDragging] = useState(false);
     const [isMyPageOpen, setIsMyPageOpen] = useState(false); // 마이페이지 상태 추가
     const [notifications] = useState<Notification[]>(sampleNotifications);
     const [isChatBotOpen, setIsChatBotOpen] = useState(false);
@@ -478,7 +479,7 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
                         userSelect: 'none'
                     }}
                 >
-                    ODIGAYNANG 😻
+                    ODIGANYANG 😻
                 </div>
             </motion.header>
 
@@ -552,7 +553,7 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
                         position: 'relative',
                         zIndex: 1
                     }}>
-                        로컬리와 함께 특별한 추억을 만들어보세요
+                        오디가냥에서 특별한 추억을 만들어보세요
                     </p>
                 </motion.div >
 
@@ -1604,15 +1605,22 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
 
             {/* Floating Chatbot Button */}
             <motion.button
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
+                drag
+                dragMomentum={false}
+                dragElastic={0}
+                onDragStart={() => setIsChatBotDragging(true)}
+                onDragEnd={() => setTimeout(() => setIsChatBotDragging(false), 100)}
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => setIsChatBotOpen(true)}
+                onClick={() => {
+                    if (!isChatBotDragging) {
+                        setIsChatBotOpen(true);
+                    }
+                }}
                 style={{
                     position: 'fixed',
                     bottom: '120px',
-                    right: 'max(30px, calc(50% - 210px))', // 모바일에서는 30px, 웹에서는 컨텐츠 영역 내부
+                    right: 'max(30px, calc(50% - 210px))',
                     width: '70px',
                     height: '70px',
                     borderRadius: '50%',
@@ -1621,7 +1629,7 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
                     backdropFilter: 'blur(20px)',
                     WebkitBackdropFilter: 'blur(20px)',
                     boxShadow: '0 8px 24px rgba(137, 199, 101, 0.4), 0 0 0 0 rgba(137, 199, 101, 0.5)',
-                    cursor: 'pointer',
+                    cursor: 'grab',
                     zIndex: 999,
                     padding: 0,
                     overflow: 'hidden',
@@ -1634,7 +1642,8 @@ export function TravelDashboard({ onLogoClick }: TravelDashboardProps) {
                     style={{
                         width: '100%',
                         height: '100%',
-                        objectFit: 'cover'
+                        objectFit: 'cover',
+                        pointerEvents: 'none'
                     }}
                 />
                 {/* Pulse animation style */}
