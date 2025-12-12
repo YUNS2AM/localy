@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowLeft, Send, MapPin } from 'lucide-react';
 import catImage from '../assets/cat.jpg';
+import catTalkingImage from '../assets/cat2.jpg';
 import { DateRangePicker } from './DateRangePicker';
 import { MapScreen } from './MapScreen';
 
@@ -106,6 +107,7 @@ export function TravelChatBot({ onClose, onComplete, onMapSelect }: TravelChatBo
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const [isCatTalking, setIsCatTalking] = useState(false);
 
     // Day-by-day planning state
     const [totalDays, setTotalDays] = useState(0);
@@ -124,6 +126,12 @@ export function TravelChatBot({ onClose, onComplete, onMapSelect }: TravelChatBo
 
     const addMessage = (type: 'cat' | 'user', content: string | React.ReactNode) => {
         setMessages(prev => [...prev, { type, content, timestamp: new Date() }]);
+
+        // 냥이 메시지일 때 0.5초간 cat2.jpg로 전환
+        if (type === 'cat') {
+            setIsCatTalking(true);
+            setTimeout(() => setIsCatTalking(false), 500);
+        }
     };
 
     const handleSend = () => {
@@ -436,28 +444,38 @@ export function TravelChatBot({ onClose, onComplete, onMapSelect }: TravelChatBo
                     style={{
                         padding: '0',
                         textAlign: 'center',
-                        background: 'transparent'
+                        background: 'transparent',
+                        position: 'relative'
                     }}
                 >
-                    <motion.img
-                        src={catImage}
-                        alt="Travel Cat"
-                        animate={{
-                            y: [0, -5, 0],
-                        }}
-                        transition={{
-                            duration: 2,
-                            repeat: Infinity,
-                            ease: "easeInOut"
-                        }}
-                        style={{
-                            width: '100%',
-                            height: '280px',
-                            objectFit: 'cover',
-                            objectPosition: 'center',
-                            display: 'block'
-                        }}
-                    />
+                    <AnimatePresence mode="wait">
+                        <motion.img
+                            key={isCatTalking ? 'talking' : 'idle'}
+                            src={isCatTalking ? catTalkingImage : catImage}
+                            alt="Travel Cat"
+                            initial={{ opacity: 0 }}
+                            animate={{
+                                opacity: 1,
+                                y: [0, -5, 0]
+                            }}
+                            exit={{ opacity: 0 }}
+                            transition={{
+                                opacity: { duration: 0.2 },
+                                y: {
+                                    duration: 2,
+                                    repeat: Infinity,
+                                    ease: "easeInOut"
+                                }
+                            }}
+                            style={{
+                                width: '100%',
+                                height: '280px',
+                                objectFit: 'cover',
+                                objectPosition: 'center',
+                                display: 'block'
+                            }}
+                        />
+                    </AnimatePresence>
                 </motion.div>
 
                 {/* 채팅 영역 */}
@@ -709,6 +727,6 @@ export function TravelChatBot({ onClose, onComplete, onMapSelect }: TravelChatBo
                     )}
                 </div>
             </motion.div>
-        </motion.div>
+        </motion.div >
     );
 }
