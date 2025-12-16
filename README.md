@@ -106,13 +106,13 @@ DATABASE_URL=mysql+pymysql://user:password@localhost:3306/travel_platform
 
 | 이름 | 역할 | 담당 업무 |
 |:---:|:---:|:---|
-| 팀원 A | **PM** | 프로젝트 관리, 일정 조율, 기획 총괄 |
-| 팀원 B | **Frontend Lead** | React 컴포넌트 개발, UI/UX 설계 |
-| 팀원 C | **Frontend Developer** | 화면 개발, 지도 연동, 반응형 UI |
-| 팀원 D | **Backend Lead** | FastAPI 서버 구축, DB 설계, API 개발 |
-| 팀원 E | **Backend Developer** | 인증 시스템, API 개발, 테스트 |
-| 팀원 F | **AI Engineer** | LangGraph 에이전트 개발, vLLM 모델 연동 |
-| 팀원 G | **Designer** | Figma 디자인, UI/UX 디자인, 에셋 제작 |
+| 정기홍 | **PM** | 프로젝트 관리, 일정 조율, 기획 총괄 |
+| 공민우 | **Frontend Lead** | React 컴포넌트 개발, UI/UX 설계 |
+| 윤샘 | **Frontend Developer** | 화면 개발, 지도 연동, 반응형 UI |
+| 신효빈 | **Backend Lead** | FastAPI 서버 구축, DB 설계, API 개발 |
+| 황재성 | **Backend Developer** | 인증 시스템, API 개발, 테스트 |
+| 김대영 | **AI Engineer** | LangGraph 에이전트 개발, vLLM 모델 연동 |
+| 박슬기 | **Designer** | Figma 디자인, UI/UX 디자인, 에셋 제작 |
 
 ---
 
