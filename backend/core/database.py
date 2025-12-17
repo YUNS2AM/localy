@@ -5,9 +5,9 @@ from sqlalchemy.exc import SQLAlchemyError
 
 # 1. DB 연결 주소 (URL) 세팅
 # SERVER_URL = "mysql+pymysql://유저명:비밀번호@서버IP:포트" > DB 서버 접속까지의 URL
-SERVER_URL = "mysql+pymysql://travel:travel12!!@localhost:3306"
+SERVER_URL = "mysql+pymysql://travel:travel12!!@192.168.0.222:3306"
 # SQLALCHEMY_DATABASE_URL = "mysql+pymysql://유저명:비밀번호@localhost:3306/db이름" > 테이블 접속까지의 URL
-SQLALCHEMY_DATABASE_URL = "mysql+pymysql://travel:travel12!!@localhost:3306/travel_platform"
+SQLALCHEMY_DATABASE_URL = "mysql+pymysql://travel:travel12!!@192.168.0.222:3306/travel_platform"
 
 # 2. 일단 DB 접속 > 접속이 안되면은 데이터베이스 생성
 server_engine = create_engine(SERVER_URL, isolation_level = "AUTOCOMMIT")

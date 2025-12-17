@@ -317,8 +317,6 @@ async def withdraw_user(user_id: str, db: Session = Depends(get_db)):
     # [NEW] DB팀 요청사항: DELETE 대신 UPDATE
     user.user_delete_check = 'Y'
     user.user_delete_date = datetime.now()
-    db.delete(user)
-    db.commit()
     
     db.commit() # 데이터는 남기고 상태만 변경
     

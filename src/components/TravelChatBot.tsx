@@ -6,6 +6,8 @@ import catTalkingImage from '../assets/cat2.jpg';
 import { DateRangePicker } from './DateRangePicker';
 import { MapScreen } from './MapScreen';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+
 interface TravelChatBotProps {
     onClose: () => void;
     onComplete: (data: TravelData) => void;
@@ -89,18 +91,9 @@ const regionRecommendations: Record<string, Array<{ name: string; address: strin
 
 export function TravelChatBot({ onClose, onComplete, onMapSelect }: TravelChatBotProps) {
     const [step, setStep] = useState<Step>('participants');
-    const [messages, setMessages] = useState<Message[]>([
-        {
-            type: 'cat',
-            content: '안녕하세요! 😸\n저는 여행 도우미 냥이에요!',
-            timestamp: new Date()
-        },
-        {
-            type: 'cat',
-            content: '몇 명이서 여행하시나요?',
-            timestamp: new Date()
-        }
-    ]);
+    const [messages, setMessages] = useState<Message[]>([]);
+    const [conversationHistory, setConversationHistory] = useState<Array<{ role: string; content: string }>>([]);
+    const [isLoading, setIsLoading] = useState(false);
     const [input, setInput] = useState('');
     const [travelData, setTravelData] = useState<Partial<TravelData>>({});
     const [selectedDestination, setSelectedDestination] = useState<{ name: string; address: string; lat: number; lng: number } | null>(null);
@@ -124,6 +117,48 @@ export function TravelChatBot({ onClose, onComplete, onMapSelect }: TravelChatBo
         scrollToBottom();
     }, [messages]);
 
+    // LLM 초기 인사 메시지 가져오기
+    useEffect(() => {
+        const fetchInitialMessage = async () => {
+            try {
+                setIsLoading(true);
+                const response = await fetch(`${API_BASE_URL}/api/langgraph/chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: '여행 계획 시작',
+                        conversation_history: []
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    setMessages([{
+                        type: 'cat',
+                        content: data.response,
+                        timestamp: new Date()
+                    }]);
+                    setConversationHistory([
+                        { role: 'user', content: '여행 계획 시작' },
+                        { role: 'assistant', content: data.response }
+                    ]);
+                }
+            } catch (error) {
+                console.error('LLM 초기 메시지 실패:', error);
+                // 폴백 메시지
+                setMessages([{
+                    type: 'cat',
+                    content: '안녕하세요! 😸\n저는 여행 도우미 냥이에요!\n\n몇 명이서 여행하시나요?',
+                    timestamp: new Date()
+                }]);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchInitialMessage();
+    }, []);
+
     const addMessage = (type: 'cat' | 'user', content: string | React.ReactNode) => {
         setMessages(prev => [...prev, { type, content, timestamp: new Date() }]);
 
@@ -134,89 +169,42 @@ export function TravelChatBot({ onClose, onComplete, onMapSelect }: TravelChatBo
         }
     };
 
-    const handleSend = () => {
-        if (!input.trim()) return;
+    const handleSend = async () => {
+        if (!input.trim() || isLoading) return;
 
-        addMessage('user', input);
-        const userInput = input.trim();
+        const userMessage = input.trim();
+        addMessage('user', userMessage);
         setInput('');
+        setIsLoading(true);
 
-        setTimeout(() => {
-            if (step === 'participants') {
-                const participants = parseInt(userInput);
-                if (isNaN(participants) || participants < 1) {
-                    addMessage('cat', '죄송해요, 올바른 인원수를 입력해주세요! (숫자만 입력해주세요)');
-                    return;
-                }
-                setTravelData(prev => ({ ...prev, participants }));
-                addMessage('cat', `${participants}명이시군요! 좋아요! 😊`);
-                setTimeout(() => {
-                    addMessage('cat', '언제부터 언제까지 여행하시나요?\n아래 캘린더에서 날짜를 선택해주세요! 📅');
-                    setStep('dates');
-                }, 800);
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/langgraph/chat`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    message: userMessage,
+                    conversation_history: conversationHistory
+                })
+            });
 
-            } else if (step === 'region') {
-                const region = userInput;
-                setTravelData(prev => ({ ...prev, region }));
-
-                // 지역에서 추천 검색
-                const matchedRegion = Object.keys(regionRecommendations).find(key =>
-                    region.includes(key) || key.includes(region)
-                );
-
-                if (matchedRegion) {
-                    const recs = regionRecommendations[matchedRegion];
-                    setRecommendations(recs);
-                    addMessage('cat', `${region} 여행이시군요! 좋은 선택이에요! 🎉`);
-                    setTimeout(() => {
-                        addMessage('cat', `Day 1의 여행지를 선택해주세요!`);
-                        setTimeout(() => {
-                            addMessage('cat',
-                                <div>
-                                    <div style={{ marginBottom: '12px', fontSize: '14px', fontWeight: '600' }}>
-                                        {region} 지역의 추천 여행지
-                                    </div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                        {recs.map((dest, index) => (
-                                            <motion.button
-                                                key={index}
-                                                whileHover={{ scale: 1.02 }}
-                                                whileTap={{ scale: 0.98 }}
-                                                onClick={() => handleDestinationSelect(dest)}
-                                                style={{
-                                                    padding: '14px 16px',
-                                                    borderRadius: '12px',
-                                                    border: '2px solid #2D8B5F',
-                                                    backgroundColor: 'white',
-                                                    cursor: 'pointer',
-                                                    textAlign: 'left',
-                                                    display: 'flex',
-                                                    alignItems: 'flex-start',
-                                                    gap: '10px'
-                                                }}
-                                            >
-                                                <MapPin size={20} color="#2D8B5F" style={{ marginTop: '2px', flexShrink: 0 }} />
-                                                <div style={{ flex: 1 }}>
-                                                    <div style={{ fontSize: '15px', fontWeight: '600', color: '#333', marginBottom: '4px' }}>
-                                                        {dest.name}
-                                                    </div>
-                                                    <div style={{ fontSize: '12px', color: '#666', lineHeight: '1.4' }}>
-                                                        {dest.address}
-                                                    </div>
-                                                </div>
-                                            </motion.button>
-                                        ))}
-                                    </div>
-                                </div>
-                            );
-                            setStep('day-selection');
-                        }, 500);
-                    }, 800);
-                } else {
-                    addMessage('cat', `${region}... 아직 제가 정보를 가지고 있지 않은 지역이에요. 😿\n다른 지역을 말씀해주시겠어요?`);
-                }
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
-        }, 500);
+
+            const data = await response.json();
+            addMessage('cat', data.response);
+
+            setConversationHistory(prev => [
+                ...prev,
+                { role: 'user', content: userMessage },
+                { role: 'assistant', content: data.response }
+            ]);
+        } catch (error) {
+            console.error('LLM API 호출 실패:', error);
+            addMessage('cat', '서버 연결에 실패했어요... 😿');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const handleDateConfirm = () => {
